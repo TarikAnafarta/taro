@@ -1,0 +1,112 @@
+# ============================================================
+# Taro — Node 1: AI Compute
+# ============================================================
+# Services: Ollama, Qdrant, AI Gateway
+#
+# This runs on the machine with GPU (optional) for AI inference.
+# Connects to Node 2's NATS server for messaging.
+# ============================================================
+
+services:
+  # ---------------------------------------------------------
+  # Ollama — Local LLM Inference
+  # ---------------------------------------------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: taro-ollama
+    restart: unless-stopped
+    ports:
+      - "${NODE1_HOST:-0.0.0.0}:11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_KEEP_ALIVE=5m
+    volumes:
+      - ollama_data:/root/.ollama
+    # Uncomment the following for NVIDIA GPU support:
+    # Requires: NVIDIA Container Toolkit installed on the host
+    # See: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - taro-ai
+
+  # ---------------------------------------------------------
+  # Qdrant — Vector Database
+  # ---------------------------------------------------------
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: taro-qdrant
+    restart: unless-stopped
+    ports:
+      - "${NODE1_HOST:-0.0.0.0}:6333:6333"
+      - "${NODE1_HOST:-0.0.0.0}:6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+      - qdrant_snapshots:/qdrant/snapshots
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6333/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - taro-ai
+
+  # ---------------------------------------------------------
+  # AI Gateway — Unified AI API (FastAPI)
+  # ---------------------------------------------------------
+  ai-gateway:
+    build:
+      context: ../../
+      dockerfile: services/ai-gateway/Dockerfile
+    container_name: taro-ai-gateway
+    restart: unless-stopped
+    ports:
+      - "${NODE1_HOST:-0.0.0.0}:8100:8100"
+    environment:
+      - AI_GATEWAY_HOST=0.0.0.0
+      - AI_GATEWAY_PORT=8100
+      - OLLAMA_URL=http://ollama:11434
+      - QDRANT_URL=http://qdrant:6333
+      - NATS_URL=${NATS_URL}
+      - TARO_CHAT_MODEL=${TARO_CHAT_MODEL:-qwen2.5:7b}
+      - TARO_EMBEDDING_MODEL=${TARO_EMBEDDING_MODEL:-nomic-embed-text}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      ollama:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8100/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - taro-ai
+
+volumes:
+  ollama_data:
+    driver: local
+  qdrant_data:
+    driver: local
+  qdrant_snapshots:
+    driver: local
+
+networks:
+  taro-ai:
+    driver: bridge

@@ -1,0 +1,250 @@
+# ============================================================
+# Taro — Node 2: Core Services
+# ============================================================
+# Services: Taro API, Dashboard, PostgreSQL, Redis, NATS,
+#           MinIO, Agent Runtime, Scheduler, Monitoring
+#
+# This is the main control node. All user-facing services
+# and data storage run here.
+# ============================================================
+
+services:
+  # ---------------------------------------------------------
+  # PostgreSQL — Primary Database
+  # ---------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: taro-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-taro}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-taro_secret_change_me}
+      - POSTGRES_DB=${POSTGRES_DB:-taro}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-taro} -d ${POSTGRES_DB:-taro}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - taro-core
+
+  # ---------------------------------------------------------
+  # Redis — Cache & Pub/Sub
+  # ---------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: taro-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taro-core
+
+  # ---------------------------------------------------------
+  # NATS — Message Bus with JetStream
+  # ---------------------------------------------------------
+  nats:
+    image: nats:latest
+    container_name: taro-nats
+    restart: unless-stopped
+    ports:
+      - "${NODE2_HOST:-0.0.0.0}:${NATS_PORT:-4222}:4222"
+      - "${NODE2_HOST:-0.0.0.0}:${NATS_MONITOR_PORT:-8222}:8222"
+      - "${NODE2_HOST:-0.0.0.0}:${NATS_WEBSOCKET_PORT:-8443}:8443"
+    volumes:
+      - nats_data:/data/jetstream
+      - ./configs/nats/nats.conf:/etc/nats/nats.conf:ro
+    command: ["-c", "/etc/nats/nats.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8222/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taro-core
+
+  # ---------------------------------------------------------
+  # MinIO — S3-compatible Object Storage
+  # ---------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: taro-minio
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-taro}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-taro_minio_secret_change_me}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - taro-core
+
+  # ---------------------------------------------------------
+  # Taro API — Core Backend (FastAPI)
+  # ---------------------------------------------------------
+  taro-api:
+    build:
+      context: ../../
+      dockerfile: services/taro-api/Dockerfile
+    container_name: taro-api
+    restart: unless-stopped
+    ports:
+      - "${NODE2_HOST:-0.0.0.0}:${API_PORT:-8000}:8000"
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - POSTGRES_URL=postgresql+asyncpg://${POSTGRES_USER:-taro}:${POSTGRES_PASSWORD:-taro_secret_change_me}@postgres:5432/${POSTGRES_DB:-taro}
+      - REDIS_URL=redis://redis:6379/0
+      - NATS_URL=nats://nats:4222
+      - NODE1_AI_GATEWAY_URL=http://${NODE1_HOST}:8100
+      - TARO_CHAT_MODEL=${TARO_CHAT_MODEL:-qwen2.5:7b}
+      - TARO_EMBEDDING_MODEL=${TARO_EMBEDDING_MODEL:-nomic-embed-text}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRY_MINUTES=${JWT_EXPIRY_MINUTES:-60}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - taro-core
+
+  # ---------------------------------------------------------
+  # Dashboard — Next.js Web UI
+  # ---------------------------------------------------------
+  dashboard:
+    build:
+      context: ../../services/dashboard
+      dockerfile: Dockerfile
+    container_name: taro-dashboard
+    restart: unless-stopped
+    ports:
+      - "${NODE2_HOST:-0.0.0.0}:3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://${NODE2_HOST}:${API_PORT:-8000}
+    depends_on:
+      taro-api:
+        condition: service_healthy
+    networks:
+      - taro-core
+
+  # ---------------------------------------------------------
+  # Agent Runtime — Agent Execution Engine
+  # ---------------------------------------------------------
+  agent-runtime:
+    build:
+      context: ../../
+      dockerfile: services/agent-runtime/Dockerfile
+    container_name: taro-agent-runtime
+    restart: unless-stopped
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://${POSTGRES_USER:-taro}:${POSTGRES_PASSWORD:-taro_secret_change_me}@postgres:5432/${POSTGRES_DB:-taro}
+      - REDIS_URL=redis://redis:6379/0
+      - NATS_URL=nats://nats:4222
+      - NODE1_AI_GATEWAY_URL=http://${NODE1_HOST}:8100
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    networks:
+      - taro-core
+
+  # ---------------------------------------------------------
+  # Scheduler — Task Scheduler
+  # ---------------------------------------------------------
+  scheduler:
+    build:
+      context: ../../
+      dockerfile: services/scheduler/Dockerfile
+    container_name: taro-scheduler
+    restart: unless-stopped
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://${POSTGRES_USER:-taro}:${POSTGRES_PASSWORD:-taro_secret_change_me}@postgres:5432/${POSTGRES_DB:-taro}
+      - NATS_URL=nats://nats:4222
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    networks:
+      - taro-core
+
+  # ---------------------------------------------------------
+  # Beszel — Lightweight System Monitoring
+  # ---------------------------------------------------------
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: taro-beszel
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${BESZEL_PORT:-8090}:8090"
+    volumes:
+      - beszel_data:/beszel_data
+    networks:
+      - taro-core
+
+  # ---------------------------------------------------------
+  # Uptime Kuma — Service Health Monitoring
+  # ---------------------------------------------------------
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: taro-uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${UPTIME_KUMA_PORT:-3001}:3001"
+    volumes:
+      - uptime_kuma_data:/app/data
+    networks:
+      - taro-core
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  nats_data:
+    driver: local
+  minio_data:
+    driver: local
+  beszel_data:
+    driver: local
+  uptime_kuma_data:
+    driver: local
+
+networks:
+  taro-core:
+    driver: bridge
