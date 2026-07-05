@@ -12,9 +12,12 @@ from sqlalchemy.future import select
 from taro_api.db.database import get_db
 from taro_api.auth.security import get_current_user
 from taro_api.services.ai_client import AIClient
+from taro_api.config import get_settings
 import taro_api.main as app_state
 
 router = APIRouter()
+
+_settings = get_settings()
 
 
 class ServiceHealthResponse(BaseModel):
@@ -51,8 +54,8 @@ async def get_system_health(
 ) -> SystemHealthResponse:
     """Check health of all dependencies (DB, Redis, NATS, AI Gateway)."""
     services = []
-    
-    # 1. Check PostgreSQL
+
+    # 1. PostgreSQL kontrolü
     db_start = time.time()
     try:
         await db.execute(select(1))
@@ -72,7 +75,7 @@ async def get_system_health(
             )
         )
 
-    # 2. Check Redis
+    # 2. Redis kontrolü
     if app_state.redis_client:
         redis_start = time.time()
         try:
@@ -97,27 +100,23 @@ async def get_system_health(
             ServiceHealthResponse(
                 name="redis",
                 status="unhealthy",
-                details={"error": "Redis client not initialized"},
+                details={"error": "Redis bağlantısı başlatılamadı"},
             )
         )
 
-    # 3. Check NATS
+    # 3. NATS kontrolü
     if app_state.nats_client and app_state.nats_client.is_connected:
-        services.append(
-            ServiceHealthResponse(
-                name="nats",
-                status="healthy",
-            )
-        )
+        services.append(ServiceHealthResponse(name="nats", status="healthy"))
     else:
         services.append(
             ServiceHealthResponse(
                 name="nats",
                 status="unhealthy",
+                details={"error": "NATS bağlantısı yok"},
             )
         )
 
-    # 4. Check AI Gateway
+    # 4. AI Gateway kontrolü (bağlanamazsa graceful degraded)
     ai = AIClient()
     ai_health = await ai.health_check()
     services.append(
@@ -128,7 +127,6 @@ async def get_system_health(
         )
     )
 
-    # Aggregate status
     unhealthy = any(s.status == "unhealthy" for s in services)
     overall_status = "degraded" if unhealthy else "healthy"
 
@@ -140,14 +138,14 @@ async def get_node_statuses(
     db: AsyncSession = Depends(get_db),
 ) -> List[NodeStatusResponse]:
     """Retrieve node-level stats for both LAN machines."""
-    settings = app_state.nats_client.settings if app_state.nats_client else None
-    node1_host = settings.NODE1_HOST if settings else "localhost"
-    node2_host = settings.NODE2_HOST if settings else "localhost"
+    # DÜZELTME: nats_client.settings yok — config'den al
+    node1_host = _settings.NODE1_HOST
+    node2_host = _settings.NODE2_HOST
 
-    # AI Gateway client
+    # AI Gateway sağlık kontrolü
     ai = AIClient()
     ai_health = await ai.health_check()
-    ollama_details = ai_health.get("details", {}).get("ollama", "disconnected")
+    ollama_details = ai_health.get("details", {}).get("ollama", "bağlantı yok")
 
     node1_services = [
         ServiceHealthResponse(
@@ -157,8 +155,8 @@ async def get_node_statuses(
         ),
         ServiceHealthResponse(
             name="ollama",
-            status="healthy" if "ok" in ollama_details else "unhealthy",
-            details={"models": ollama_details},
+            status="healthy" if "ok" in str(ollama_details) else "unhealthy",
+            details={"models": str(ollama_details)},
         ),
         ServiceHealthResponse(
             name="qdrant",
@@ -166,17 +164,13 @@ async def get_node_statuses(
         ),
     ]
 
-    # Node 2 services
+    # Node 2 servisler
     health_agg = await get_system_health(db)
     node2_services = [
         s for s in health_agg.services if s.name in ("postgres", "redis", "nats")
     ]
-    node2_services.append(
-        ServiceHealthResponse(name="taro-api", status="healthy")
-    )
-    node2_services.append(
-        ServiceHealthResponse(name="dashboard", status="healthy")
-    )
+    node2_services.append(ServiceHealthResponse(name="taro-api", status="healthy"))
+    node2_services.append(ServiceHealthResponse(name="dashboard", status="healthy"))
 
     return [
         NodeStatusResponse(
@@ -199,19 +193,14 @@ async def get_system_info() -> SystemInfoResponse:
     days, remainder = divmod(uptime_sec, 86400)
     hours, remainder = divmod(remainder, 3600)
     minutes, seconds = divmod(remainder, 60)
-    
-    uptime_str = f"{days}d {hours}h {minutes}m {seconds}s"
+    uptime_str = f"{days}g {hours}s {minutes}d {seconds}sn"
 
-    active_models = []
-    # Fetch active models from Ollama via Gateway
+    active_models: List[str] = []
     ai = AIClient()
     try:
         gw_health = await ai.health_check()
-        # Parse active models if any
-        models_str = gw_health.get("details", {}).get("ollama", "")
-        if "ok" in models_str:
-            # We can request models list directly if needed
-            active_models = ["qwen2.5:7b", "nomic-embed-text"]
+        if gw_health.get("status") == "healthy":
+            active_models = [_settings.TARO_CHAT_MODEL, _settings.TARO_EMBEDDING_MODEL]
     except Exception:
         pass
 

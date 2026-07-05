@@ -112,16 +112,16 @@ async def execute_agent(
         event = AgentExecuteRequest(
             source="taro-api",
             agent_id=agent.id,
-            config=params or {},
+            params=params or {},
         )
         try:
             await app_state.nats_client.publish_event(
-                f"{Subjects.AGENT_EXECUTE}.{agent.name}", event
+                f"{Subjects.AGENT_EXECUTE_REQUEST}.{agent.name}", event
             )
         except Exception as exc:
             raise HTTPException(
                 status_code=502,
-                detail=f"Failed to publish execution event to NATS: {exc}",
+                detail=f"NATS'e ajan çalıştırma olayı gönderilemedi: {exc}",
             ) from exc
         return {"status": "triggered", "message": f"Execution request sent for agent {agent.name}"}
 

@@ -103,13 +103,13 @@ async def send_chat_message(
         # Parse output
         choices = completion.get("choices", [])
         if not choices:
-            raise ValueError("No completion choices returned from AI Gateway")
-        assistant_content = choices[0].get("message", {}).get("content", "Error generating response")
+            raise ValueError("AI Gateway'den herhangi bir yanıt seçeneği dönmedi")
+        assistant_content = choices[0].get("message", {}).get("content", "Yanıt oluşturulurken hata oluştu")
         ai_model = completion.get("model", "qwen2.5:7b")
         tokens = completion.get("usage", {}).get("total_tokens", 0)
     except Exception as exc:
-        assistant_content = f"Sorry, I failed to process that request due to an error: {exc}"
-        ai_model = "error"
+        assistant_content = f"Üzgünüm, bir hata nedeniyle bu isteği işleyemedim: {exc}"
+        ai_model = "hata"
         tokens = 0
 
     # Save assistant message

@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import signal
 from typing import Any
+import nats
 
 from taro_common.config import TaroSettings
 from taro_common.logging import setup_logging, get_logger
 from taro_common.nats_client import TaroNatsClient
-from taro_common.events import TaroEvent
+from taro_common.events import AgentExecuteRequest, AgentExecuteResult, Subjects
 
 from agent_runtime.agent_loader import AgentLoader
 from agent_runtime.context import AgentContext
@@ -22,11 +24,17 @@ ai_client = AIClient(base_url=settings.NODE1_AI_GATEWAY_URL)
 shutdown_event = asyncio.Event()
 
 
-async def handle_agent_execute(event: TaroEvent) -> None:
+async def handle_agent_execute(msg: nats.aio.msg.Msg) -> None:
     """Invoked when a NATS execution request matches."""
-    payload = event.payload or {}
-    agent_id = payload.get("agent_id")
-    config = payload.get("config", {})
+    try:
+        payload_str = msg.data.decode("utf-8")
+        event = AgentExecuteRequest.model_validate_json(payload_str)
+    except Exception as e:
+        logger.error("failed_to_parse_agent_execution_event", error=str(e))
+        return
+
+    agent_id = event.agent_id
+    params = event.params or {}
 
     logger.info("received_agent_execution_request", agent_id=agent_id)
     
@@ -49,7 +57,7 @@ async def handle_agent_execute(event: TaroEvent) -> None:
         ai_client=ai_client,
         nats_client=nats_client,
         logger=logger,
-        config=config,
+        config=params,
     )
 
     try:
@@ -57,16 +65,16 @@ async def handle_agent_execute(event: TaroEvent) -> None:
         logger.info("agent_executed_successfully", name=agent.manifest.name, success=res.success)
         
         # Publish result back
-        from taro_common.events import AgentExecuteResult, Subjects
         result_event = AgentExecuteResult(
             source="agent-runtime",
             agent_id=agent.manifest.name,
-            success=res.success,
-            data=res.data,
-            error=res.message if not res.success else "",
+            task_id=event.task_id,
+            status="completed" if res.success else "failed",
+            result=res.data or {},
+            error=res.message if not res.success else None,
         )
         await nats_client.publish_event(
-            f"{Subjects.AGENT_RESULT}.{agent.manifest.name}", result_event
+            f"{Subjects.AGENT_EXECUTE_RESULT}.{agent.manifest.name}", result_event
         )
     except Exception as exc:
         logger.exception("agent_execution_failed", name=agent.manifest.name, error=str(exc))
@@ -85,9 +93,8 @@ async def main() -> None:
         return
 
     # Subscribe to NATS executions
-    from taro_common.events import Subjects
-    # taro.agent.execute.*
-    await nats_client.subscribe(f"{Subjects.AGENT_EXECUTE}.*", handle_agent_execute)
+    # taro.agent.execute.request.*
+    await nats_client.subscribe(f"{Subjects.AGENT_EXECUTE_REQUEST}.*", handle_agent_execute)
     logger.info("agent_runtime_subscribed_to_execution_events")
 
     # Graceful shutdown handlers
@@ -113,4 +120,3 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         pass
-Class_init = "completed"
