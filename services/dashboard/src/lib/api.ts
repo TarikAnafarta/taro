@@ -26,9 +26,10 @@ import type {
 
 const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
-    return `http://${window.location.hostname}:8000`;
+    // Tarayıcıda göreli yol kullanılarak Next.js proxy rewrite'ı tetiklenir
+    return '';
   }
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  return process.env.NEXT_PUBLIC_API_URL || 'http://taro-api:8000';
 };
 
 const API_BASE_URL = getApiBaseUrl();
