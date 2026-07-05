@@ -51,7 +51,6 @@ export default function Sidebar() {
           </div>
           <div className={styles.userInfo}>
             <div className={styles.username}>{user?.username || 'Kullanıcı'}</div>
-            <div className={styles.userRole}>Operatör</div>
           </div>
         </div>
         <button onClick={logout} className={styles.logoutBtn} id="logout-button">

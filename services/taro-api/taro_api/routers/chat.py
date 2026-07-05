@@ -108,7 +108,15 @@ async def send_chat_message(
         ai_model = completion.get("model", "qwen2.5:3b")
         tokens = completion.get("usage", {}).get("total_tokens", 0)
     except Exception as exc:
-        assistant_content = f"Üzgünüm, bir hata nedeniyle bu isteği işleyemedim: {exc}"
+        import httpx
+        error_detail = str(exc)
+        # HTTP Status Error durumunda gövdedeki detail bilgisini çek
+        if isinstance(exc, httpx.HTTPStatusError):
+            try:
+                error_detail = exc.response.json().get("detail", error_detail)
+            except Exception:
+                pass
+        assistant_content = f"Üzgünüm, bir hata nedeniyle bu isteği işleyemedim: {error_detail}"
         ai_model = "hata"
         tokens = 0
 

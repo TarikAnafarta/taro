@@ -28,13 +28,6 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <h1 className={styles.title}>{getPageTitle()}</h1>
-      
-      <div className={styles.meta}>
-        <div className={styles.systemBadge}>
-          <span className={styles.onlineDot} />
-          <span>Yerel Ağ Düğümü</span>
-        </div>
-      </div>
     </header>
   );
 }

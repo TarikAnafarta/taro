@@ -32,6 +32,28 @@ async def chat_completion(request: ChatRequest) -> ChatResponse:
 
     model = request.model or svc.default_chat_model
 
+    # Ollama üzerinde modelin çekilip çekilmediğini kontrol et
+    try:
+        models = await svc.list_models()
+        model_names = [m.get("name", "") for m in models]
+        # Tam veya tag'siz eşleşme kontrolü (örn. qwen2.5:3b ile qwen2.5:3b:latest eşleşmeli)
+        model_exists = False
+        for name in model_names:
+            if model in name or name in model:
+                model_exists = True
+                break
+        
+        if not model_exists:
+            # model adını temizle veya göster
+            raise HTTPException(
+                status_code=404,
+                detail=f"'{model}' modeli Ollama sunucusunda bulunamadı. Lütfen sunucunuzda 'docker compose exec ollama ollama pull {model}' komutunu çalıştırarak modeli indirin."
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("ollama_model_check_failed", error=str(exc))
+
     try:
         result = await svc.chat_completion(
             messages=[m.model_dump() for m in request.messages],
@@ -41,7 +63,14 @@ async def chat_completion(request: ChatRequest) -> ChatResponse:
         )
     except Exception as exc:
         logger.error("chat_completion_failed", error=str(exc))
-        raise HTTPException(status_code=502, detail=f"Ollama error: {exc}") from exc
+        # Eğer Ollama 404 döndüyse model eksik demektir
+        err_msg = str(exc)
+        if "404" in err_msg:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Ollama sunucusunda '{model}' modeli bulunamadı. Lütfen 'docker compose exec ollama ollama pull {model}' komutuyla modeli indirin."
+            ) from exc
+        raise HTTPException(status_code=502, detail=f"Ollama hatası: {exc}") from exc
 
     # Publish event via NATS (fire-and-forget)
     if app_state.nats_client and app_state.nats_client.is_connected:
