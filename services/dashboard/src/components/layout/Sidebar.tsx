@@ -15,8 +15,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     { name: 'İlgi Alanları', path: '/interests' },
     { name: 'Günlük Özet', path: '/briefing' },
     { name: 'Asistan', path: '/chat' },
-    { name: 'Ajanlar', path: '/agents' },
-    { name: 'Sistem Durumu', path: '/system' },
   ];
 
   return (

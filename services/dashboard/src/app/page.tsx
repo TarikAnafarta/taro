@@ -122,11 +122,22 @@ function DashboardHome() {
   }, []);
 
   const handleFeedback = async (itemId: string, type: 'like' | 'dislike') => {
+    const currentFeedback = feedbackSent[itemId];
+    const newFeedback = currentFeedback === type ? null : type;
+
     try {
-      await briefing.sendFeedback(itemId, type);
-      setFeedbackSent(prev => ({ ...prev, [itemId]: type }));
+      if (newFeedback) {
+        await briefing.sendFeedback(itemId, newFeedback);
+        setFeedbackSent(prev => ({ ...prev, [itemId]: newFeedback }));
+      } else {
+        setFeedbackSent(prev => {
+          const updated = { ...prev };
+          delete updated[itemId];
+          return updated;
+        });
+      }
     } catch (err) {
-      console.error("Feedback gönderilemedi:", err);
+      console.error("Feedback güncellenemedi:", err);
     }
   };
 
@@ -209,13 +220,12 @@ function DashboardHome() {
                 </p>
                 
                 {/* Geri Bildirim Butonları */}
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem', width: '100%' }}>
                   <button
                     onClick={() => handleFeedback(item.id, 'like')}
-                    disabled={!!feedbackSent[item.id]}
                     style={{
                       background: hasLiked ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      border: `1px solid ${hasLiked ? '#fff' : 'rgba(255, 255, 255, 0.15)'}`,
                       color: hasLiked ? '#fff' : 'var(--color-text-secondary, #9ca3af)',
                       padding: '5px 12px',
                       borderRadius: '6px',
@@ -228,10 +238,9 @@ function DashboardHome() {
                   </button>
                   <button
                     onClick={() => handleFeedback(item.id, 'dislike')}
-                    disabled={!!feedbackSent[item.id]}
                     style={{
                       background: hasDisliked ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      border: `1px solid ${hasDisliked ? 'var(--color-danger, #ef4444)' : 'rgba(255, 255, 255, 0.15)'}`,
                       color: hasDisliked ? 'var(--color-danger, #ef4444)' : 'var(--color-text-secondary, #9ca3af)',
                       padding: '5px 12px',
                       borderRadius: '6px',
@@ -242,8 +251,21 @@ function DashboardHome() {
                   >
                     İlgimi Çekmedi
                   </button>
-                  {feedbackSent[item.id] && (
-                    <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted, #6b7280)' }}>Tercih kaydedildi</span>
+                  {item.source_url && (
+                    <a
+                      href={item.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary"
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        marginLeft: 'auto',
+                      }}
+                    >
+                      Bağlantıyı Aç
+                    </a>
                   )}
                 </div>
               </div>
