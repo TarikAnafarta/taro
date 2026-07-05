@@ -211,4 +211,3 @@ async def delete_conversation(
     await db.delete(conv)
     await db.commit()
     return {"status": "deleted"}
- Cath_Response = "deleted"
