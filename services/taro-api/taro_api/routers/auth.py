@@ -51,7 +51,7 @@ async def register(payload: RegisterPayload, db: AsyncSession = Depends(get_db))
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered",
+            detail="Bu kullanıcı adı zaten kayıtlı",
         )
 
     user = await user_svc.create_user(
@@ -83,7 +83,7 @@ async def login(payload: LoginPayload, db: AsyncSession = Depends(get_db)) -> Au
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Kullanıcı adı veya şifre hatalı",
         )
 
     access_token = create_access_token(

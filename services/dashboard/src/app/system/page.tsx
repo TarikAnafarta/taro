@@ -20,7 +20,7 @@ export default function SystemPage() {
       setNodes(nodesRes);
       setSysInfo(infoRes);
     } catch (err: any) {
-      setError(err.detail || 'Failed to fetch cluster node health status');
+      setError(err.detail || 'Küme düğüm sağlık durumu alınamadı');
     } finally {
       setLoading(false);
     }
@@ -28,7 +28,7 @@ export default function SystemPage() {
 
   useEffect(() => {
     loadSystemStatus();
-    // Auto-refresh stats every 30 seconds
+    // Her 30 saniyede otomatik yenile
     const interval = setInterval(loadSystemStatus, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -38,12 +38,25 @@ export default function SystemPage() {
       case 'healthy':
       case 'ok':
       case 'connected':
-        return '#10b981'; // green
+        return '#10b981'; // yeşil
       case 'degraded':
       case 'warning':
-        return '#f59e0b'; // orange
+        return '#f59e0b'; // turuncu
       default:
-        return '#ef4444'; // red
+        return '#ef4444'; // kırmızı
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'healthy': return 'Sağlıklı';
+      case 'ok': return 'Tamam';
+      case 'connected': return 'Bağlı';
+      case 'degraded': return 'Bozulmuş';
+      case 'warning': return 'Uyarı';
+      case 'offline': return 'Çevrimdışı';
+      case 'error': return 'Hata';
+      default: return status;
     }
   };
 
@@ -51,13 +64,13 @@ export default function SystemPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.3s ease' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: '#fff' }}>System Node Health</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: '#fff' }}>Sistem Düğüm Sağlığı</h2>
           <p style={{ color: 'var(--color-text-secondary)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>
-            Real-time diagnostics across your distributed personal server nodes.
+            Dağıtık kişisel sunucu düğümlerinizde gerçek zamanlı tanılama.
           </p>
         </div>
         <button onClick={loadSystemStatus} className="btn btn-secondary" style={{ padding: '8px 16px' }}>
-          🔄 Refresh
+          🔄 Yenile
         </button>
       </div>
 
@@ -80,19 +93,19 @@ export default function SystemPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {/* Metadata Card */}
+          {/* Metadata Kartı */}
           {sysInfo && (
             <div className="card card-glass" style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
               <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Taro Version</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Taro Sürümü</span>
                 <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginTop: '0.25rem' }}>v{sysInfo.version}</div>
               </div>
               <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Core Uptime</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Çekirdek Çalışma Süresi</span>
                 <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginTop: '0.25rem' }}>{sysInfo.uptime}</div>
               </div>
               <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Default LLMs</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Varsayılan LLM Modeller</span>
                 <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-primary)', marginTop: '0.25rem' }}>
                   {sysInfo.active_models?.join(', ') || 'qwen2.5:7b, nomic-embed-text'}
                 </div>
@@ -100,22 +113,22 @@ export default function SystemPage() {
             </div>
           )}
 
-          {/* Node Cards */}
+          {/* Düğüm Kartları */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem' }}>
             {nodes.map((node) => (
               <div key={node.node_id} className="card card-glass" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    🖥️ {node.node_id === 'node1-ai-compute' ? 'Node 1: AI Compute' : 'Node 2: Core Services'}
+                    🖥️ {node.node_id === 'node1-ai-compute' ? 'Düğüm 1: Yapay Zeka İşlem' : 'Düğüm 2: Çekirdek Servisler'}
                   </h3>
                   <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-                    Host address: <code>{node.host}</code>
+                    Sunucu adresi: <code>{node.host}</code>
                   </p>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Active Services
+                    Aktif Servisler
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {node.services.map((svc) => (
@@ -143,7 +156,7 @@ export default function SystemPage() {
                             boxShadow: `0 0 6px ${getStatusColor(svc.status)}`
                           }} />
                           <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
-                            {svc.status}
+                            {getStatusLabel(svc.status)}
                           </span>
                         </div>
                       </div>

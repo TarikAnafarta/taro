@@ -7,19 +7,19 @@ import styles from './Header.module.css';
 export default function Header() {
   const pathname = usePathname();
 
-  // Determine page title based on path
+  // Sayfa başlığını yola göre belirle
   const getPageTitle = () => {
     switch (pathname) {
       case '/':
-        return 'Dashboard Overview';
+        return 'Kontrol Paneli';
       case '/briefing':
-        return 'Daily Briefing';
+        return 'Günlük Özet';
       case '/chat':
-        return 'Taro Assistant Chat';
+        return 'Taro Asistan';
       case '/agents':
-        return 'Agent Command Center';
+        return 'Ajan Merkezi';
       case '/system':
-        return 'System Node Health';
+        return 'Sistem Durumu';
       default:
         return 'Taro OS';
     }
@@ -32,7 +32,7 @@ export default function Header() {
       <div className={styles.meta}>
         <div className={styles.systemBadge}>
           <span className={styles.onlineDot} />
-          <span>Local Area Network Node</span>
+          <span>Yerel Ağ Düğümü</span>
         </div>
       </div>
     </header>

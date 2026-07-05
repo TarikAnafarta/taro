@@ -7,8 +7,8 @@ import AppLayout from "@/components/layout/AppLayout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Taro — Personal AI OS",
-  description: "Distributed personal AI operating system and second brain",
+  title: "Taro — Kişisel Yapay Zeka OS",
+  description: "Dağıtık kişisel yapay zeka işletim sistemi ve ikinci beyin",
 };
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="tr">
       <body className={inter.className}>
         <AuthProvider>
           <AppLayout>{children}</AppLayout>

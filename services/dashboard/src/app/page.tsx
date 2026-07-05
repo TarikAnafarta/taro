@@ -33,7 +33,7 @@ export default function DashboardHome() {
         setCareerCount(careers.filter(c => c.status === 'active').length);
         setTodayBriefing(todayB);
       } catch (err) {
-        console.error('Failed to load dashboard statistics', err);
+        console.error('Dashboard istatistikleri yüklenemedi', err);
       } finally {
         setLoading(false);
       }
@@ -43,9 +43,9 @@ export default function DashboardHome() {
 
   const getGreeting = () => {
     const hrs = new Date().getHours();
-    if (hrs < 12) return 'Good Morning';
-    if (hrs < 18) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hrs < 12) return 'Günaydın';
+    if (hrs < 18) return 'İyi Öğleden Sonralar';
+    return 'İyi Akşamlar';
   };
 
   if (loading) {
@@ -56,42 +56,42 @@ export default function DashboardHome() {
     );
   }
 
-  // Find focus item in briefing
+  // Özetin odak öğesini bul
   const focusItem = todayBriefing?.items.find(item => item.category === 'focus');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.3s ease' }}>
-      {/* Greetings block */}
+      {/* Karşılama bloğu */}
       <div>
         <h2 style={{ fontSize: '1.75rem', fontWeight: 700, margin: 0, color: '#fff' }}>
-          {getGreeting()}, {userProfile?.display_name || user?.username || 'Operator'}
+          {getGreeting()}, {userProfile?.display_name || user?.username || 'Operatör'}
         </h2>
         <p style={{ color: 'var(--color-text-secondary)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>
-          Taro is active. Cluster status: Healthy.
+          Taro aktif. Küme durumu: Sağlıklı.
         </p>
       </div>
 
-      {/* Quick stats row */}
+      {/* Hızlı istatistikler */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
         <div className="card card-glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Tracked Interests</span>
+          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Takip Edilen İlgiler</span>
           <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-primary)' }}>{interestsCount}</span>
         </div>
         <div className="card card-glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Learning Tracks</span>
+          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Öğrenme Takibi</span>
           <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-accent)' }}>{learningCount}</span>
         </div>
         <div className="card card-glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Career Objectives</span>
+          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Kariyer Hedefleri</span>
           <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-success)' }}>{careerCount}</span>
         </div>
         <div className="card card-glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Node Latency</span>
+          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Düğüm Gecikmesi</span>
           <span style={{ fontSize: '2rem', fontWeight: 700, color: '#f59e0b' }}>12ms</span>
         </div>
       </div>
 
-      {/* Today's Focus Card */}
+      {/* Bugünün Odak Kartı */}
       <div className="card card-glass" style={{ padding: '2rem', position: 'relative', overflow: 'hidden' }}>
         <div style={{
           position: 'absolute',
@@ -103,29 +103,29 @@ export default function DashboardHome() {
           pointerEvents: 'none'
         }} />
         <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: 'var(--color-accent)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          🎯 TODAY'S PRINCIPAL FOCUS
+          🎯 BUGÜNÜN ANA ODAĞI
         </h3>
         <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.35rem', fontWeight: 700, color: '#fff' }}>
-          {focusItem?.title || 'System initialization complete'}
+          {focusItem?.title || 'Sistem başlatma tamamlandı'}
         </h4>
         <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-          {focusItem?.summary || 'Review your interests and configure news crawlers to populate your briefings.'}
+          {focusItem?.summary || 'İlgi alanlarınızı gözden geçirin ve haber tarayıcılarını yapılandırın.'}
         </p>
       </div>
 
-      {/* Dashboard Actions and Preview Grid */}
+      {/* Dashboard İşlemleri ve Önizleme */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-        {/* Quick actions panel */}
+        {/* Hızlı işlemler paneli */}
         <div className="card card-glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>Quick Actions</h3>
-          <Link href="/briefing" className="btn btn-primary" style={{ width: '100%' }}>View Briefing</Link>
-          <Link href="/chat" className="btn btn-secondary" style={{ width: '100%' }}>Consult Assistant</Link>
-          <Link href="/system" className="btn btn-secondary" style={{ width: '100%' }}>Check Node Health</Link>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>Hızlı İşlemler</h3>
+          <Link href="/briefing" className="btn btn-primary" style={{ width: '100%' }}>Özeti Görüntüle</Link>
+          <Link href="/chat" className="btn btn-secondary" style={{ width: '100%' }}>Asistana Danış</Link>
+          <Link href="/system" className="btn btn-secondary" style={{ width: '100%' }}>Düğüm Sağlığını Kontrol Et</Link>
         </div>
 
-        {/* Briefing summary list */}
+        {/* Özet akışı */}
         <div className="card card-glass" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>Today's Briefing Stream</h3>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>Bugünün Özet Akışı</h3>
           {todayBriefing && todayBriefing.items.length > 1 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {todayBriefing.items.filter(item => item.category !== 'focus').slice(0, 3).map((item) => (
@@ -135,7 +135,7 @@ export default function DashboardHome() {
                       {item.category}
                     </span>
                     <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
-                      Relevance: {Math.round(item.relevance_score * 100)}%
+                      İlgi: {Math.round(item.relevance_score * 100)}%
                     </span>
                   </div>
                   <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#fff', fontWeight: 600 }}>{item.title}</h4>
@@ -145,7 +145,7 @@ export default function DashboardHome() {
             </div>
           ) : (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-              Briefing stream is currently empty. Run a briefing generation task.
+              Özet akışı şu an boş. Bir özet oluşturma görevi çalıştırın.
             </div>
           )}
         </div>

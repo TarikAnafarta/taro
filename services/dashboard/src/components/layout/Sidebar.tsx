@@ -11,11 +11,11 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
 
   const menuItems = [
-    { name: 'Home', path: '/', icon: '🏠' },
-    { name: 'Daily Briefing', path: '/briefing', icon: '📋' },
-    { name: 'Chat Assistant', path: '/chat', icon: '💬' },
-    { name: 'Agents', path: '/agents', icon: '🤖' },
-    { name: 'System status', path: '/system', icon: '⚙️' },
+    { name: 'Ana Sayfa', path: '/', icon: '🏠' },
+    { name: 'Günlük Özet', path: '/briefing', icon: '📋' },
+    { name: 'Asistan', path: '/chat', icon: '💬' },
+    { name: 'Ajanlar', path: '/agents', icon: '🤖' },
+    { name: 'Sistem Durumu', path: '/system', icon: '⚙️' },
   ];
 
   return (
@@ -47,15 +47,15 @@ export default function Sidebar() {
       <div className={styles.footer}>
         <div className={styles.userSection}>
           <div className={styles.avatar}>
-            {user?.username?.substring(0, 2).toUpperCase() || 'TA'}
+            {user?.username?.substring(0, 2).toUpperCase() || 'TR'}
           </div>
           <div className={styles.userInfo}>
-            <div className={styles.username}>{user?.username || 'User'}</div>
-            <div className={styles.userRole}>Operator</div>
+            <div className={styles.username}>{user?.username || 'Kullanıcı'}</div>
+            <div className={styles.userRole}>Operatör</div>
           </div>
         </div>
         <button onClick={logout} className={styles.logoutBtn} id="logout-button">
-          Sign Out
+          Çıkış
         </button>
       </div>
     </aside>

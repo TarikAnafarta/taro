@@ -14,17 +14,17 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- Step 1: Profile State ---
+  // --- Adım 1: Profil Durumu ---
   const [profile, setProfile] = useState<UserProfile>({
     display_name: '',
-    preferred_language: 'en',
+    preferred_language: 'tr',
     timezone: 'UTC',
     country: '',
     occupation: '',
     professional_status: 'professional',
   });
 
-  // Auto-detect timezone
+  // Saat dilimini otomatik algıla
   useEffect(() => {
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -34,19 +34,19 @@ export default function OnboardingPage() {
     } catch {}
   }, []);
 
-  // --- Step 2: Interests State ---
+  // --- Adım 2: İlgi Alanları Durumu ---
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [customInterest, setCustomInterest] = useState('');
 
   const interestCategories = {
-    '💻 Technology': ['AI', 'Programming', 'Cyber Security', 'DevOps', 'Kubernetes', 'Cloud', 'Open Source', 'GitHub'],
-    '💰 Business': ['Startups', 'Economy', 'Finance', 'Cryptocurrency'],
-    '🎵 Music': ['Guitar', 'Bass', 'Piano', 'Drums', 'Music'],
-    '💪 Health': ['Fitness', 'Bodybuilding', 'Nutrition'],
-    '⚽ Sports': ['Basketball', 'Football', 'Formula 1'],
-    '🎬 Entertainment': ['Movies', 'Gaming'],
-    '🧠 Science': ['Neuroscience', 'Cognitive Science', 'Psychology', 'Philosophy'],
-    '📈 Productivity': ['Productivity'],
+    '💻 Teknoloji': ['Yapay Zeka', 'Programlama', 'Siber Güvenlik', 'DevOps', 'Kubernetes', 'Bulut', 'Açık Kaynak', 'GitHub'],
+    '💰 İş Dünyası': ['Girişimcilik', 'Ekonomi', 'Finans', 'Kripto Para'],
+    '🎵 Müzik': ['Gitar', 'Bas', 'Piyano', 'Davul', 'Müzik'],
+    '💪 Sağlık': ['Fitness', 'Vücut Geliştirme', 'Beslenme'],
+    '⚽ Spor': ['Basketbol', 'Futbol', 'Formula 1'],
+    '🎬 Eğlence': ['Filmler', 'Oyunlar'],
+    '🧠 Bilim': ['Nörobilim', 'Bilişsel Bilim', 'Psikoloji', 'Felsefe'],
+    '📈 Verimlilik': ['Verimlilik'],
   };
 
   const toggleInterest = (topic: string) => {
@@ -63,11 +63,11 @@ export default function OnboardingPage() {
     }
   };
 
-  // --- Step 3: News Preferences State ---
+  // --- Adım 3: Haber Tercihleri Durumu ---
   const newsOptions = [
-    'AI news', 'software development news', 'cybersecurity news', 'DevOps news',
-    'economy news', 'finance news', 'sports news', 'music news', 'GitHub trends',
-    'Hacker News highlights', 'Reddit trends', 'research papers', 'startup news'
+    'YZ haberleri', 'yazılım geliştirme haberleri', 'siber güvenlik haberleri', 'DevOps haberleri',
+    'ekonomi haberleri', 'finans haberleri', 'spor haberleri', 'müzik haberleri', 'GitHub trendleri',
+    'Hacker News öne çıkanlar', 'Reddit trendleri', 'araştırma makaleleri', 'girişim haberleri'
   ];
 
   const [newsPrefs, setNewsPrefs] = useState<Record<string, { active: boolean; frequency: 'daily' | 'every_6h' | 'weekly' }>>(
@@ -77,7 +77,7 @@ export default function OnboardingPage() {
     }, {} as any)
   );
 
-  // Pre-fill news preferences based on interest selections
+  // Seçilen ilgilere göre haber tercihlerini önceden doldur
   useEffect(() => {
     setNewsPrefs((prev) => {
       const updated = { ...prev };
@@ -85,15 +85,15 @@ export default function OnboardingPage() {
 
       newsOptions.forEach(opt => {
         const isMatch = selectedLower.some(interest => {
-          if (opt.includes('ai') && interest.includes('ai')) return true;
-          if (opt.includes('software') && interest.includes('programming')) return true;
-          if (opt.includes('cybersecurity') && interest.includes('cyber')) return true;
+          if (opt.includes('yz') && (interest.includes('yapay') || interest.includes('ai'))) return true;
+          if (opt.includes('yazılım') && interest.includes('programlama')) return true;
+          if (opt.includes('siber') && interest.includes('siber')) return true;
           if (opt.includes('devops') && interest.includes('devops')) return true;
-          if (opt.includes('economy') && (interest.includes('economy') || interest.includes('finance'))) return true;
-          if (opt.includes('sports') && (interest.includes('ball') || interest.includes('formula'))) return true;
-          if (opt.includes('music') && (interest.includes('music') || interest.includes('guitar') || interest.includes('bass') || interest.includes('drums'))) return true;
+          if (opt.includes('ekonomi') && (interest.includes('ekonomi') || interest.includes('finans'))) return true;
+          if (opt.includes('spor') && (interest.includes('ball') || interest.includes('formula') || interest.includes('basketbol') || interest.includes('futbol'))) return true;
+          if (opt.includes('müzik') && (interest.includes('müzik') || interest.includes('gitar') || interest.includes('bas') || interest.includes('davul'))) return true;
           if (opt.includes('github') && interest.includes('github')) return true;
-          if (opt.includes('startup') && interest.includes('startup')) return true;
+          if (opt.includes('girişim') && interest.includes('girişim')) return true;
           return false;
         });
         if (isMatch) {
@@ -118,12 +118,12 @@ export default function OnboardingPage() {
     }));
   };
 
-  // --- Step 4: Learning Goals State ---
+  // --- Adım 4: Öğrenme Hedefleri Durumu ---
   const [learningGoals, setLearningGoals] = useState<string[]>([]);
   const [customGoal, setCustomGoal] = useState('');
 
   const suggestedGoals = [
-    'Kubernetes', 'Docker', 'Linux', 'Networking', 'React', 'Python', 'Go', 'Rust', 'AI Agents', 'OpenTelemetry', 'Cyber Security', 'Algorithms'
+    'Kubernetes', 'Docker', 'Linux', 'Ağ Güvenliği', 'React', 'Python', 'Go', 'Rust', 'YZ Ajanları', 'OpenTelemetry', 'Siber Güvenlik', 'Algoritmalar'
   ];
 
   const toggleGoal = (goal: string) => {
@@ -140,13 +140,13 @@ export default function OnboardingPage() {
     }
   };
 
-  // --- Step 5: Career Goals State ---
+  // --- Adım 5: Kariyer Hedefleri Durumu ---
   const [careerGoals, setCareerGoals] = useState<string[]>([]);
   const [customCareer, setCustomCareer] = useState('');
 
   const suggestedCareers = [
-    'find internship', 'find remote job', 'become DevOps engineer', 'become security engineer',
-    'become backend engineer', 'build open-source project', 'build startup', 'create YouTube content', 'improve GitHub profile'
+    'staj bul', 'uzaktan iş bul', 'DevOps mühendisi ol', 'güvenlik mühendisi ol',
+    'backend mühendisi ol', 'açık kaynak proje geliştir', 'startup kur', 'YouTube içeriği oluştur', 'GitHub profilini geliştir'
   ];
 
   const toggleCareer = (career: string) => {
@@ -163,18 +163,17 @@ export default function OnboardingPage() {
     }
   };
 
-  // --- Step 6: Submission ---
+  // --- Adım 6: Tamamlama ---
   const handleComplete = async () => {
     setError(null);
     setIsSubmitting(true);
 
-    // Format interests
+    // İlgileri biçimlendir
     const interestsPayload: InterestTopic[] = selectedInterests.map((topic) => {
-      // Find category
-      let category = 'Technology';
+      let category = 'Teknoloji';
       for (const [cat, topics] of Object.entries(interestCategories)) {
         if (topics.includes(topic)) {
-          category = cat.substring(2); // strip icon
+          category = cat.substring(2); // ikonu çıkar
           break;
         }
       }
@@ -186,7 +185,7 @@ export default function OnboardingPage() {
       };
     });
 
-    // Format news preferences
+    // Haber tercihlerini biçimlendir
     const newsPayload: NewsPreference[] = Object.entries(newsPrefs)
       .filter(([_, value]) => value.active)
       .map(([key, value]) => ({
@@ -195,13 +194,13 @@ export default function OnboardingPage() {
         is_active: true,
       }));
 
-    // Format learning goals
+    // Öğrenme hedeflerini biçimlendir
     const learningPayload: LearningGoal[] = learningGoals.map((g) => ({
       topic: g,
       status: 'active',
     }));
 
-    // Format career goals
+    // Kariyer hedeflerini biçimlendir
     const careerPayload: CareerGoal[] = careerGoals.map((c) => ({
       goal: c,
       status: 'active',
@@ -220,7 +219,7 @@ export default function OnboardingPage() {
       await refreshUser();
       router.push('/');
     } catch (err: any) {
-      setError(err.detail || 'Failed to complete onboarding. Please verify details and retry.');
+      setError(err.detail || 'Kurulum tamamlanamadı. Lütfen bilgileri kontrol edin.');
     } finally {
       setIsSubmitting(false);
     }
@@ -228,11 +227,11 @@ export default function OnboardingPage() {
 
   const nextStep = () => {
     if (step === 1 && !profile.display_name) {
-      setError('Please provide a display name.');
+      setError('Lütfen görünen adınızı girin.');
       return;
     }
     if (step === 2 && selectedInterests.length < 3) {
-      setError('Please select at least 3 interest topics.');
+      setError('Lütfen en az 3 ilgi alanı seçin.');
       return;
     }
     setError(null);
@@ -247,48 +246,48 @@ export default function OnboardingPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        {/* Step Indicator */}
+        {/* Adım Göstergesi */}
         <div className={styles.progressContainer}>
           <div className={styles.progressBar} style={{ width: `${(step / 6) * 100}%` }} />
-          <span className={styles.stepIndicator}>Step {step} of 6</span>
+          <span className={styles.stepIndicator}>Adım {step} / 6</span>
         </div>
 
         {error && <div className={styles.errorAlert}>{error}</div>}
 
-        {/* Step 1: Welcome & Profile */}
+        {/* Adım 1: Hoş Geldiniz & Profil */}
         {step === 1 && (
           <div className={styles.step}>
-            <h2>Welcome to Taro</h2>
-            <p className={styles.description}>Let's set up your profile to customize your second brain.</p>
+            <h2>Taro'ya Hoş Geldiniz</h2>
+            <p className={styles.description}>İkinci beyninizi kişiselleştirmek için profilinizi ayarlayalım.</p>
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>Display Name *</label>
+              <label className={styles.label}>Görünen Ad *</label>
               <input
                 type="text"
                 className="input"
                 value={profile.display_name}
                 onChange={(e) => setProfile({ ...profile, display_name: e.target.value })}
-                placeholder="Tarik"
+                placeholder="Adınız"
                 required
               />
             </div>
 
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
-                <label className={styles.label}>Language</label>
+                <label className={styles.label}>Dil</label>
                 <select
                   className="select"
                   value={profile.preferred_language}
                   onChange={(e) => setProfile({ ...profile, preferred_language: e.target.value })}
                 >
-                  <option value="en">English</option>
-                  <option value="es">Spanish</option>
-                  <option value="de">German</option>
-                  <option value="tr">Turkish</option>
+                  <option value="tr">Türkçe</option>
+                  <option value="en">İngilizce</option>
+                  <option value="es">İspanyolca</option>
+                  <option value="de">Almanca</option>
                 </select>
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.label}>Timezone</label>
+                <label className={styles.label}>Saat Dilimi</label>
                 <input
                   type="text"
                   className="input"
@@ -299,37 +298,37 @@ export default function OnboardingPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>Occupation / Domain</label>
+              <label className={styles.label}>Meslek / Alan</label>
               <input
                 type="text"
                 className="input"
                 value={profile.occupation}
                 onChange={(e) => setProfile({ ...profile, occupation: e.target.value })}
-                placeholder="Software developer / Student"
+                placeholder="Yazılım geliştirici / Öğrenci"
               />
             </div>
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>Professional Status</label>
+              <label className={styles.label}>Profesyonel Durum</label>
               <select
                 className="select"
                 value={profile.professional_status}
                 onChange={(e) => setProfile({ ...profile, professional_status: e.target.value })}
               >
-                <option value="professional">Professional</option>
-                <option value="student">Student</option>
-                <option value="freelancer">Freelancer</option>
-                <option value="researcher">Researcher</option>
+                <option value="professional">Profesyonel</option>
+                <option value="student">Öğrenci</option>
+                <option value="freelancer">Serbest Çalışan</option>
+                <option value="researcher">Araştırmacı</option>
               </select>
             </div>
           </div>
         )}
 
-        {/* Step 2: Interests */}
+        {/* Adım 2: İlgi Alanları */}
         {step === 2 && (
           <div className={styles.step}>
-            <h2>Select Your Interests</h2>
-            <p className={styles.description}>Choose at least 3 topics you want Taro to track and prioritize for you.</p>
+            <h2>İlgi Alanlarınızı Seçin</h2>
+            <p className={styles.description}>Taro'nun sizin için takip etmesini istediğiniz en az 3 konu seçin.</p>
 
             <div className={styles.categories}>
               {Object.entries(interestCategories).map(([category, topics]) => (
@@ -360,18 +359,18 @@ export default function OnboardingPage() {
                 className="input"
                 value={customInterest}
                 onChange={(e) => setCustomInterest(e.target.value)}
-                placeholder="Add custom interest..."
+                placeholder="Özel ilgi alanı ekle..."
               />
               <button type="submit" className="btn btn-secondary">+</button>
             </form>
           </div>
         )}
 
-        {/* Step 3: News Preferences */}
+        {/* Adım 3: Haber Tercihleri */}
         {step === 3 && (
           <div className={styles.step}>
-            <h2>Configure Briefing Contents</h2>
-            <p className={styles.description}>Select which news topics to include and how frequently you want them updated.</p>
+            <h2>Özet İçeriğini Yapılandır</h2>
+            <p className={styles.description}>Hangi haber konularını dahil etmek istediğinizi ve güncelleme sıklığını seçin.</p>
 
             <div className={styles.list}>
               {newsOptions.map((opt) => {
@@ -394,9 +393,9 @@ export default function OnboardingPage() {
                         value={config.frequency}
                         onChange={(e) => handleFrequencyChange(opt, e.target.value as any)}
                       >
-                        <option value="daily">Daily</option>
-                        <option value="every_6h">Every 6 hrs</option>
-                        <option value="weekly">Weekly</option>
+                        <option value="daily">Günlük</option>
+                        <option value="every_6h">Her 6 Saatte</option>
+                        <option value="weekly">Haftalık</option>
                       </select>
                     )}
                   </div>
@@ -406,11 +405,11 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 4: Learning Goals */}
+        {/* Adım 4: Öğrenme Hedefleri */}
         {step === 4 && (
           <div className={styles.step}>
-            <h2>What Are You Learning?</h2>
-            <p className={styles.description}>Select or add topics you are currently pursuing so Taro can track and research them.</p>
+            <h2>Ne Öğreniyorsunuz?</h2>
+            <p className={styles.description}>Taro'nun takip edip araştırmasını istediğiniz konuları seçin veya ekleyin.</p>
 
             <div className={styles.chipsContainer} style={{ marginBottom: '1.5rem' }}>
               {suggestedGoals.map((goal) => {
@@ -434,18 +433,18 @@ export default function OnboardingPage() {
                 className="input"
                 value={customGoal}
                 onChange={(e) => setCustomGoal(e.target.value)}
-                placeholder="Add custom learning goal..."
+                placeholder="Özel öğrenme hedefi ekle..."
               />
               <button type="submit" className="btn btn-secondary">+</button>
             </form>
           </div>
         )}
 
-        {/* Step 5: Career Goals */}
+        {/* Adım 5: Kariyer Hedefleri */}
         {step === 5 && (
           <div className={styles.step}>
-            <h2>What Are Your Career Goals?</h2>
-            <p className={styles.description}>Specify what you want to achieve so Taro can alert you of matching opportunities.</p>
+            <h2>Kariyer Hedefleriniz Neler?</h2>
+            <p className={styles.description}>Taro'nun size uygun fırsatları bildirmesi için hedeflerinizi belirtin.</p>
 
             <div className={styles.chipsContainer} style={{ marginBottom: '1.5rem' }}>
               {suggestedCareers.map((career) => {
@@ -469,38 +468,41 @@ export default function OnboardingPage() {
                 className="input"
                 value={customCareer}
                 onChange={(e) => setCustomCareer(e.target.value)}
-                placeholder="Add custom career goal..."
+                placeholder="Özel kariyer hedefi ekle..."
               />
               <button type="submit" className="btn btn-secondary">+</button>
             </form>
           </div>
         )}
 
-        {/* Step 6: Summary & Confirm */}
+        {/* Adım 6: Özet & Onay */}
         {step === 6 && (
           <div className={styles.step}>
-            <h2>Deploy Taro OS</h2>
-            <p className={styles.description}>Review your configurations before initiating onboarding and first-launch briefing.</p>
+            <h2>Taro OS'u Başlat</h2>
+            <p className={styles.description}>Kurulumu tamamlamadan önce yapılandırmalarınızı gözden geçirin.</p>
 
             <div className={styles.summaryBlock}>
               <div className={styles.summaryItem}>
-                <strong>Operator:</strong> {profile.display_name} ({profile.occupation || 'N/A'})
+                <strong>Operatör:</strong> {profile.display_name} ({profile.occupation || 'Belirtilmedi'})
               </div>
               <div className={styles.summaryItem}>
-                <strong>Interests:</strong> {selectedInterests.join(', ')}
+                <strong>İlgi Alanları:</strong> {selectedInterests.join(', ') || 'Yok'}
               </div>
               <div className={styles.summaryItem}>
-                <strong>Active Briefing Topics:</strong>{' '}
+                <strong>Aktif Özet Konuları:</strong>{' '}
                 {Object.entries(newsPrefs)
                   .filter(([_, v]) => v.active)
-                  .map(([k, v]) => `${k} (${v.frequency})`)
-                  .join(', ') || 'None'}
+                  .map(([k, v]) => {
+                    const freqLabel = v.frequency === 'daily' ? 'Günlük' : v.frequency === 'every_6h' ? 'Her 6 Saatte' : 'Haftalık';
+                    return `${k} (${freqLabel})`;
+                  })
+                  .join(', ') || 'Yok'}
               </div>
               <div className={styles.summaryItem}>
-                <strong>Learning:</strong> {learningGoals.join(', ') || 'None'}
+                <strong>Öğrenme:</strong> {learningGoals.join(', ') || 'Yok'}
               </div>
               <div className={styles.summaryItem}>
-                <strong>Career:</strong> {careerGoals.join(', ') || 'None'}
+                <strong>Kariyer:</strong> {careerGoals.join(', ') || 'Yok'}
               </div>
             </div>
 
@@ -512,16 +514,16 @@ export default function OnboardingPage() {
               disabled={isSubmitting}
               id="onboarding-complete"
             >
-              {isSubmitting ? 'Provisioning Agent OS...' : '🌿 Launch Taro'}
+              {isSubmitting ? 'Ajan OS hazırlanıyor...' : '🌿 Taro\'yu Başlat'}
             </button>
           </div>
         )}
 
-        {/* Navigation Buttons */}
+        {/* Gezinme Butonları */}
         <div className={styles.navRow}>
           {step > 1 && (
             <button type="button" className="btn btn-secondary" onClick={prevStep}>
-              Back
+              Geri
             </button>
           )}
           {step < 6 ? (
@@ -532,7 +534,7 @@ export default function OnboardingPage() {
               onClick={nextStep}
               id="onboarding-next"
             >
-              Next
+              İleri
             </button>
           ) : null}
         </div>

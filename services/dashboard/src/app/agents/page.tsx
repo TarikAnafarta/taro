@@ -16,7 +16,7 @@ export default function AgentsPage() {
       const res = await agentsApi.list();
       setAgents(res);
     } catch (err) {
-      console.error('Failed to retrieve agents', err);
+      console.error('Ajanlar alınamadı', err);
     } finally {
       setLoading(false);
     }
@@ -31,22 +31,30 @@ export default function AgentsPage() {
     setExecutionMessage(null);
     try {
       const res = (await agentsApi.execute(id)) as any;
-      setExecutionMessage(res.message || `Triggered execution for agent ${name}`);
-      // Reload details to update execution date
+      setExecutionMessage(res.message || `${name} ajanı başlatıldı`);
       loadAgents();
     } catch (err: any) {
-      setExecutionMessage(err.detail || 'Execution trigger failed');
+      setExecutionMessage(err.detail || 'Ajan başlatılamadı');
     } finally {
       setExecutingId(null);
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'active': return 'Aktif';
+      case 'inactive': return 'Pasif';
+      case 'error': return 'Hata';
+      default: return status;
     }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.3s ease' }}>
       <div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: '#fff' }}>Agent Command Center</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: '#fff' }}>Ajan Merkezi</h2>
         <p style={{ color: 'var(--color-text-secondary)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>
-          Monitor, configure, and trigger pluggable AI agents on Node 2 runtime.
+          Düğüm 2 çalışma ortamındaki yapay zeka ajanlarını izleyin ve tetikleyin.
         </p>
       </div>
 
@@ -93,12 +101,12 @@ export default function AgentsPage() {
                     fontWeight: 600,
                     textTransform: 'uppercase'
                   }}>
-                    {agent.status}
+                    {getStatusLabel(agent.status)}
                   </span>
                 </div>
                 
                 <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', margin: '0 0 1rem 0', lineHeight: 1.5 }}>
-                  {agent.description || 'No description provided.'}
+                  {agent.description || 'Açıklama bulunmuyor.'}
                 </p>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '1.5rem' }}>
@@ -119,7 +127,7 @@ export default function AgentsPage() {
 
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
-                  {agent.last_executed_at ? `Last run: ${new Date(agent.last_executed_at).toLocaleString()}` : 'Never executed'}
+                  {agent.last_executed_at ? `Son çalışma: ${new Date(agent.last_executed_at).toLocaleString('tr-TR')}` : 'Hiç çalıştırılmadı'}
                 </span>
                 <button
                   onClick={() => handleExecute(agent.id, agent.name)}
@@ -127,7 +135,7 @@ export default function AgentsPage() {
                   style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                   disabled={executingId === agent.id}
                 >
-                  {executingId === agent.id ? 'Running...' : 'Execute ⚙️'}
+                  {executingId === agent.id ? 'Çalışıyor...' : 'Çalıştır ⚙️'}
                 </button>
               </div>
             </div>
@@ -136,9 +144,9 @@ export default function AgentsPage() {
       ) : (
         <div className="card card-glass" style={{ padding: '3rem', textAlign: 'center' }}>
           <span style={{ fontSize: '2.5rem' }}>🔌</span>
-          <h3 style={{ margin: '1rem 0 0.5rem 0', color: '#fff' }}>No Agents Registered</h3>
+          <h3 style={{ margin: '1rem 0 0.5rem 0', color: '#fff' }}>Kayıtlı Ajan Yok</h3>
           <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-            Pluggable agents can be configured under `agents/` and installed as python entry points.
+            Takılabilir ajanlar <code>agents/</code> dizini altında yapılandırılabilir ve Python giriş noktaları olarak kurulabilir.
           </p>
         </div>
       )}

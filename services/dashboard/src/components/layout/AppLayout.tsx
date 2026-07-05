@@ -42,17 +42,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Auth pages (login, register)
+  // Auth sayfaları (giriş, kayıt)
   if (isAuthPage) {
     return <>{children}</>;
   }
 
-  // Onboarding wizard
+  // Onboarding sihirbazı
   if (isOnboardingPage) {
     return <>{children}</>;
   }
 
-  // Standard authenticated dashboard shell
+  // Standart kimlik doğrulamalı dashboard
   if (isAuthenticated && isOnboarded) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0e1a' }}>
@@ -67,7 +67,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Fallback while redirecting
+  // Yönlendirme beklenirken göster
   return (
     <div style={{
       display: 'flex',

@@ -17,7 +17,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) {
-      setError('Please enter both username and password.');
+      setError('Lütfen kullanıcı adı ve şifrenizi girin.');
       return;
     }
     setError(null);
@@ -26,7 +26,7 @@ export default function LoginPage() {
       await login(username, password);
       router.push('/');
     } catch (err: any) {
-      setError(err.detail || 'Login failed. Please verify your credentials.');
+      setError(err.detail || 'Giriş başarısız. Bilgilerinizi kontrol edin.');
     } finally {
       setIsLoading(false);
     }
@@ -39,26 +39,26 @@ export default function LoginPage() {
           <span className={styles.logoIcon}>🌿</span>
           <span className={styles.logoText}>Taro</span>
         </div>
-        <p className={styles.subtitle}>Personal AI Operating System & Second Brain</p>
+        <p className={styles.subtitle}>Kişisel Yapay Zeka İşletim Sistemi</p>
 
         {error && <div className={styles.errorAlert}>{error}</div>}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
-            <label htmlFor="username" className={styles.label}>Username</label>
+            <label htmlFor="username" className={styles.label}>Kullanıcı Adı</label>
             <input
               type="text"
               id="username"
               className={styles.input}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="operator"
+              placeholder="kullanici_adi"
               required
             />
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="password" className={styles.label}>Password</label>
+            <label htmlFor="password" className={styles.label}>Şifre</label>
             <input
               type="password"
               id="password"
@@ -77,12 +77,12 @@ export default function LoginPage() {
             disabled={isLoading}
             id="login-submit"
           >
-            {isLoading ? 'Decrypting Access...' : 'Authenticate'}
+            {isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
           </button>
         </form>
 
         <div className={styles.switchPage}>
-          New node? <Link href="/register" className={styles.link}>Request credentials</Link>
+          Hesabınız yok mu? <Link href="/register" className={styles.link}>Kayıt Ol</Link>
         </div>
       </div>
     </div>

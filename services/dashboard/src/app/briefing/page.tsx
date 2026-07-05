@@ -24,11 +24,10 @@ export default function DailyBriefingPage() {
       const res = await briefingApi.getByDate(dateStr);
       setBriefing(res);
     } catch (err: any) {
-      // If 404, we just set briefing to null rather than showing block error
       if (err.status === 404) {
         setBriefing(null);
       } else {
-        setError(err.detail || 'Failed to fetch daily briefing');
+        setError(err.detail || 'Günlük özet alınamadı');
       }
     } finally {
       setLoading(false);
@@ -46,7 +45,7 @@ export default function DailyBriefingPage() {
       const res = await briefingApi.generate();
       setBriefing(res);
     } catch (err: any) {
-      setError(err.detail || 'Failed to generate briefing');
+      setError(err.detail || 'Özet oluşturulamadı');
     } finally {
       setGenerating(false);
     }
@@ -61,30 +60,30 @@ export default function DailyBriefingPage() {
   const getCategoryTheme = (category: string) => {
     switch (category.toLowerCase()) {
       case 'focus':
-        return { icon: '🎯', label: 'Today\'s focus', color: 'var(--color-accent, #8b5cf6)', border: '1px solid rgba(139, 92, 246, 0.3)' };
+        return { icon: '🎯', label: 'Bugünün Odağı', color: 'var(--color-accent, #8b5cf6)', border: '1px solid rgba(139, 92, 246, 0.3)' };
       case 'news':
-        return { icon: '📰', label: 'AI & Tech News', color: 'var(--color-primary, #3b82f6)', border: '1px solid rgba(59, 130, 246, 0.3)' };
+        return { icon: '📰', label: 'Yapay Zeka & Teknoloji', color: 'var(--color-primary, #3b82f6)', border: '1px solid rgba(59, 130, 246, 0.3)' };
       case 'github':
-        return { icon: '📊', label: 'GitHub Trending', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' };
+        return { icon: '📊', label: 'GitHub Trendleri', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' };
       case 'learning':
-        return { icon: '📚', label: 'Learning Tracks', color: '#ec4899', border: '1px solid rgba(236, 72, 153, 0.3)' };
+        return { icon: '📚', label: 'Öğrenme Takibi', color: '#ec4899', border: '1px solid rgba(236, 72, 153, 0.3)' };
       case 'career':
-        return { icon: '💼', label: 'Career Growth', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)' };
+        return { icon: '💼', label: 'Kariyer Gelişimi', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)' };
       case 'fitness':
-        return { icon: '💪', label: 'Health & Fitness', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.3)' };
+        return { icon: '💪', label: 'Sağlık & Spor', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.3)' };
       default:
-        return { icon: '💡', label: 'Information', color: 'var(--color-text-secondary)', border: '1px solid rgba(255,255,255,0.08)' };
+        return { icon: '💡', label: 'Bilgi', color: 'var(--color-text-secondary)', border: '1px solid rgba(255,255,255,0.08)' };
     }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.3s ease' }}>
-      {/* Page Header and Controls */}
+      {/* Sayfa Başlığı ve Kontroller */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button onClick={() => navigateDay(-1)} className="btn btn-secondary" style={{ padding: '8px 12px' }}>◀</button>
           <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>
-            {currentDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            {currentDate.toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </h2>
           <button onClick={() => navigateDay(1)} className="btn btn-secondary" style={{ padding: '8px 12px' }}>▶</button>
         </div>
@@ -95,7 +94,7 @@ export default function DailyBriefingPage() {
           disabled={generating}
           id="generate-briefing-btn"
         >
-          {generating ? 'Regenerating...' : '🔄 Generate Briefing'}
+          {generating ? 'Oluşturuluyor...' : '🔄 Özet Oluştur'}
         </button>
       </div>
 
@@ -118,7 +117,7 @@ export default function DailyBriefingPage() {
         </div>
       ) : briefing && briefing.items.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-          {/* Render Focus first if it exists */}
+          {/* Önce Odak Öğesini Göster */}
           {briefing.items.filter(i => i.category === 'focus').map((item) => {
             const theme = getCategoryTheme(item.category);
             return (
@@ -146,7 +145,7 @@ export default function DailyBriefingPage() {
             );
           })}
 
-          {/* Render rest of categories */}
+          {/* Diğer kategoriler */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
             {briefing.items.filter(i => i.category !== 'focus').map((item) => {
               const theme = getCategoryTheme(item.category);
@@ -176,7 +175,7 @@ export default function DailyBriefingPage() {
                         fontSize: '0.7rem',
                         color: 'var(--color-text-secondary)'
                       }}>
-                        Rel: {Math.round(item.relevance_score * 100)}%
+                        İlgi: {Math.round(item.relevance_score * 100)}%
                       </span>
                     </div>
                     <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#fff', fontWeight: 600, lineHeight: 1.4 }}>
@@ -190,7 +189,7 @@ export default function DailyBriefingPage() {
                   {item.source_url && (
                     <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                        Source: {item.source_name || 'Web'}
+                        Kaynak: {item.source_name || 'Web'}
                       </span>
                       <a
                         href={item.source_url}
@@ -198,7 +197,7 @@ export default function DailyBriefingPage() {
                         rel="noopener noreferrer"
                         style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-primary)' }}
                       >
-                        Read Link ↗
+                        Bağlantıyı Aç ↗
                       </a>
                     </div>
                   )}
@@ -210,12 +209,12 @@ export default function DailyBriefingPage() {
       ) : (
         <div className="card card-glass" style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '3rem' }}>📭</span>
-          <h3 style={{ margin: 0, color: '#fff' }}>No briefing logs for this date</h3>
+          <h3 style={{ margin: 0, color: '#fff' }}>Bu tarih için özet bulunamadı</h3>
           <p style={{ margin: 0, color: 'var(--color-text-secondary)', maxWidth: '400px', fontSize: '0.95rem' }}>
-            It looks like no briefing has been generated for this date. Click generate to construct a personalized mock summary.
+            Bu tarih için henüz bir özet oluşturulmamış. Kişiselleştirilmiş özet oluşturmak için tıklayın.
           </p>
           <button onClick={handleGenerate} className="btn btn-primary" style={{ marginTop: '1rem' }}>
-            Generate Briefing
+            Özet Oluştur
           </button>
         </div>
       )}
