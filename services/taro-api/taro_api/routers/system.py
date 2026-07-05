@@ -12,7 +12,7 @@ from sqlalchemy.future import select
 from taro_api.db.database import get_db
 from taro_api.auth.security import get_current_user
 from taro_api.services.ai_client import AIClient
-from taro_api.main import nats_client, redis_client, _start_time
+import taro_api.main as app_state
 
 router = APIRouter()
 
@@ -73,10 +73,10 @@ async def get_system_health(
         )
 
     # 2. Check Redis
-    if redis_client:
+    if app_state.redis_client:
         redis_start = time.time()
         try:
-            await redis_client.ping()
+            await app_state.redis_client.ping()
             services.append(
                 ServiceHealthResponse(
                     name="redis",
@@ -102,7 +102,7 @@ async def get_system_health(
         )
 
     # 3. Check NATS
-    if nats_client and nats_client.is_connected:
+    if app_state.nats_client and app_state.nats_client.is_connected:
         services.append(
             ServiceHealthResponse(
                 name="nats",
@@ -140,7 +140,7 @@ async def get_node_statuses(
     db: AsyncSession = Depends(get_db),
 ) -> List[NodeStatusResponse]:
     """Retrieve node-level stats for both LAN machines."""
-    settings = nats_client.settings if nats_client else None
+    settings = app_state.nats_client.settings if app_state.nats_client else None
     node1_host = settings.NODE1_HOST if settings else "localhost"
     node2_host = settings.NODE2_HOST if settings else "localhost"
 
@@ -195,7 +195,7 @@ async def get_node_statuses(
 @router.get("/system/info", response_model=SystemInfoResponse)
 async def get_system_info() -> SystemInfoResponse:
     """Retrieve general details and active models list."""
-    uptime_sec = int(time.time() - _start_time) if _start_time else 0
+    uptime_sec = int(time.time() - app_state._start_time) if app_state._start_time else 0
     days, remainder = divmod(uptime_sec, 86400)
     hours, remainder = divmod(remainder, 3600)
     minutes, seconds = divmod(remainder, 60)

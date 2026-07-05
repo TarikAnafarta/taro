@@ -12,7 +12,7 @@ from sqlalchemy.future import select
 from taro_api.db.database import get_db
 from taro_api.db.models import User, Agent
 from taro_api.auth.security import get_current_user
-from taro_api.main import nats_client
+import taro_api.main as app_state
 
 router = APIRouter()
 
@@ -107,7 +107,7 @@ async def execute_agent(
     await db.commit()
 
     # Publish NATS execute event if NATS client is active
-    if nats_client and nats_client.is_connected:
+    if app_state.nats_client and app_state.nats_client.is_connected:
         from taro_common.events import AgentExecuteRequest, Subjects
         event = AgentExecuteRequest(
             source="taro-api",
@@ -115,7 +115,7 @@ async def execute_agent(
             config=params or {},
         )
         try:
-            await nats_client.publish_event(
+            await app_state.nats_client.publish_event(
                 f"{Subjects.AGENT_EXECUTE}.{agent.name}", event
             )
         except Exception as exc:
