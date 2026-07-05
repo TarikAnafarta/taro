@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -17,18 +17,29 @@ from taro_api.db.models import User
 
 settings = get_settings()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 def hash_password(password: str) -> str:
-    """Generate a bcrypt hash of the plain password."""
-    return pwd_context.hash(password)
+    """Generate a bcrypt hash of the plain password.
+
+    passlib Python 3.12 ile uyumsuz olduğu için doğrudan bcrypt kullanılıyor.
+    """
+    password_bytes = password.encode("utf-8")
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify that a plain password matches the hashed password."""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"),
+            hashed_password.encode("utf-8"),
+        )
+    except Exception:
+        return False
 
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
@@ -52,7 +63,7 @@ def decode_access_token(token: str) -> dict[str, Any]:
     except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail="Kimlik bilgileri doğrulanamadı",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
 
@@ -64,7 +75,7 @@ async def get_current_user(
     """FastAPI dependency to retrieve the currently logged in user."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="Kimlik bilgileri doğrulanamadı",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
@@ -81,6 +92,6 @@ async def get_current_user(
         raise credentials_exception
 
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=400, detail="Kullanıcı hesabı aktif değil")
 
     return user
