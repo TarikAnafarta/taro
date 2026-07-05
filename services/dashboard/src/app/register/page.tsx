@@ -42,7 +42,6 @@ export default function RegisterPage() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.logoSection}>
-          <span className={styles.logoIcon}>🌿</span>
           <span className={styles.logoText}>Taro</span>
         </div>
         <p className={styles.subtitle}>Yeni Hesap Oluştur</p>

@@ -6,23 +6,28 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './Sidebar.module.css';
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
   const menuItems = [
-    { name: 'Ana Sayfa', path: '/', icon: '🏠' },
-    { name: 'Günlük Özet', path: '/briefing', icon: '📋' },
-    { name: 'Asistan', path: '/chat', icon: '💬' },
-    { name: 'Ajanlar', path: '/agents', icon: '🤖' },
-    { name: 'Sistem Durumu', path: '/system', icon: '⚙️' },
+    { name: 'Ana Sayfa', path: '/' },
+    { name: 'İlgi Alanları', path: '/interests' },
+    { name: 'Günlük Özet', path: '/briefing' },
+    { name: 'Asistan', path: '/chat' },
+    { name: 'Ajanlar', path: '/agents' },
+    { name: 'Sistem Durumu', path: '/system' },
   ];
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
       <div className={styles.logoContainer}>
-        <span className={styles.logoIcon}>🌿</span>
         <span className={styles.logoText}>Taro</span>
+        {onClose && (
+          <button onClick={onClose} className={styles.closeButton} aria-label="Menüyü Kapat">
+            ✕
+          </button>
+        )}
       </div>
       
       <nav className={styles.nav}>
@@ -33,9 +38,9 @@ export default function Sidebar() {
               <li key={item.path} className={styles.navItem}>
                 <Link
                   href={item.path}
+                  onClick={onClose}
                   className={`${styles.navLink} ${isActive ? styles.navLinkActive : ''}`}
                 >
-                  <span className={styles.itemIcon}>{item.icon}</span>
                   <span className={styles.itemText}>{item.name}</span>
                 </Link>
               </li>

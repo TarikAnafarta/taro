@@ -4,22 +4,18 @@
   width: 100vw;
   align-items: center;
   justify-content: center;
-  background-color: #0a0e1a;
-  background-image: radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0, transparent 50%),
-                    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.1) 0, transparent 50%);
+  background-color: #070913;
   padding: 1.5rem;
   box-sizing: border-box;
 }
 
 .card {
   width: 100%;
-  max-width: 420px;
-  background: rgba(17, 24, 39, 0.6);
-  backdrop-filter: blur(16px);
+  max-width: 400px;
+  background: #0d111d;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-xl, 24px);
+  border-radius: 12px;
   padding: 2.5rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   box-sizing: border-box;
 }
 
@@ -27,25 +23,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
   margin-bottom: 0.5rem;
-}
-
-.logoIcon {
-  font-size: 2.2rem;
 }
 
 .logoText {
   font-size: 2rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.03em;
 }
 
 .subtitle {
   text-align: center;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   color: var(--color-text-secondary, #9ca3af);
   margin-bottom: 2rem;
 }
@@ -55,7 +45,7 @@
   border: 1px solid rgba(239, 68, 68, 0.2);
   color: var(--color-danger, #ef4444);
   padding: 0.75rem;
-  border-radius: var(--radius-md, 12px);
+  border-radius: 8px;
   font-size: 0.85rem;
   margin-bottom: 1.5rem;
   text-align: center;
@@ -75,40 +65,38 @@
 
 .label {
   font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-muted, #6b7280);
+  font-weight: 500;
+  color: var(--color-text-secondary, #9ca3af);
 }
 
 .input {
-  background: rgba(17, 24, 39, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-md, 12px);
+  background: #141a29;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   padding: 0.75rem 1rem;
   color: var(--color-text, #f9fafb);
   font-size: 0.95rem;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease;
   outline: none;
 }
 
 .input:focus {
-  border-color: var(--color-primary, #3b82f6);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .switchPage {
   margin-top: 1.5rem;
   text-align: center;
   font-size: 0.85rem;
-  color: var(--color-text-secondary, #9ca3af);
+  color: var(--color-text-muted, #6b7280);
 }
 
 .link {
-  color: var(--color-primary, #3b82f6);
+  color: var(--color-text, #f9fafb);
   font-weight: 500;
+  text-decoration: underline;
 }
 
 .link:hover {
-  text-decoration: underline;
+  color: #fff;
 }

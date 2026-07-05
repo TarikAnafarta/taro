@@ -36,7 +36,6 @@ export default function LoginPage() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.logoSection}>
-          <span className={styles.logoIcon}>🌿</span>
           <span className={styles.logoText}>Taro</span>
         </div>
         <p className={styles.subtitle}>Kişisel Yapay Zeka Asistanı ve Bilgi Merkezi</p>

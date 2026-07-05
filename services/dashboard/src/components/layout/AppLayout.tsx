@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from './Sidebar';
@@ -11,6 +11,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, isOnboarded, isLoading } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const isAuthPage = pathname === '/login' || pathname === '/register';
   const isOnboardingPage = pathname === '/onboarding';
@@ -18,14 +19,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
-    if (!isAuthenticated && !isAuthPage) {
+    if (!isAuthenticated && !isAuthPage && pathname !== '/') {
       router.push('/login');
     } else if (isAuthenticated && !isOnboarded && !isOnboardingPage) {
       router.push('/onboarding');
     } else if (isAuthenticated && isOnboarded && (isAuthPage || isOnboardingPage)) {
       router.push('/');
     }
-  }, [isLoading, isAuthenticated, isOnboarded, isAuthPage, isOnboardingPage, router]);
+  }, [isLoading, isAuthenticated, isOnboarded, isAuthPage, isOnboardingPage, pathname, router]);
 
   if (isLoading) {
     return (
@@ -52,14 +53,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // Giriş yapmamış kullanıcılar için ana sayfa (Landing Page)
+  if (!isAuthenticated && pathname === '/') {
+    return <>{children}</>;
+  }
+
   // Standart kimlik doğrulamalı dashboard
   if (isAuthenticated && isOnboarded) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0e1a' }}>
-        <Sidebar />
-        <div style={{ flex: 1, paddingLeft: '260px', display: 'flex', flexDirection: 'column' }}>
-          <Header />
-          <main style={{ flex: 1, padding: '2rem', boxSizing: 'border-box' }}>
+      <div className="app-layout">
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        {isSidebarOpen && (
+          <div
+            onClick={() => setIsSidebarOpen(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              background: 'rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(2px)',
+              zIndex: 999,
+            }}
+          />
+        )}
+        <div className="app-main">
+          <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+          <main className="app-content">
             {children}
           </main>
         </div>
