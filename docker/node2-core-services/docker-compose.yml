@@ -145,8 +145,8 @@ services:
   # ---------------------------------------------------------
   dashboard:
     build:
-      context: ../../services/dashboard
-      dockerfile: Dockerfile
+      context: ../../
+      dockerfile: services/dashboard/Dockerfile
     container_name: taro-dashboard
     restart: unless-stopped
     ports:
