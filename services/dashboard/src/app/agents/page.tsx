@@ -30,7 +30,7 @@ export default function AgentsPage() {
     setExecutingId(id);
     setExecutionMessage(null);
     try {
-      const res = await agentsApi.execute(id);
+      const res = (await agentsApi.execute(id)) as any;
       setExecutionMessage(res.message || `Triggered execution for agent ${name}`);
       // Reload details to update execution date
       loadAgents();
