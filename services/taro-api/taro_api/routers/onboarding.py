@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -305,6 +305,6 @@ async def complete_onboarding(
     
     # 7. Generate first Daily Briefing
     briefing_svc = BriefingService(db)
-    await briefing_svc.generate_mock_briefing(current_user.id, date.today())
+    await briefing_svc.get_or_create_briefing(current_user.id, date.today())
 
     return {"status": "success"}
