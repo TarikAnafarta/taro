@@ -259,6 +259,10 @@ export const briefing = {
   async generate(): Promise<DailyBriefing> {
     return post<DailyBriefing>('/api/briefing/generate');
   },
+
+  async sendFeedback(itemId: string, feedback: 'like' | 'dislike'): Promise<{ status: string; message: string }> {
+    return post<{ status: string; message: string }>(`/api/briefing/items/${itemId}/feedback`, { feedback });
+  },
 };
 
 // ── Agents ──────────────────────────────────────────────────

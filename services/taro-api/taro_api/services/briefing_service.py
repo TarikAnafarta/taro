@@ -1,27 +1,81 @@
-"""Service to generate mock and personalized daily briefings."""
+"""Service to generate real and personalized daily briefings via RSS scraping."""
 
 from __future__ import annotations
 
 import random
-from datetime import date
+import urllib.request
+import xml.etree.ElementTree as ET
+import re
+from datetime import date, datetime
 from typing import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from taro_api.db.models import DailyBriefing, BriefingItem, User, UserInterest, LearningGoal, CareerGoal, NewsPreference
+from taro_api.db.models import DailyBriefing, BriefingItem, User, UserInterest, LearningGoal, CareerGoal
+
+def clean_html(raw_html: str | None) -> str:
+    """HTML etiketlerini temizler."""
+    if not raw_html:
+        return ""
+    cleanr = re.compile('<.*?>')
+    cleantext = re.sub(cleanr, '', raw_html)
+    # Satır sonu ve fazla boşlukları temizle
+    cleantext = re.sub(r'\s+', ' ', cleantext)
+    return cleantext.strip()
+
+def fetch_rss_feed(url: str, category: str) -> list[dict]:
+    """Belirtilen RSS beslemesinden haberleri çeker."""
+    items = []
+    try:
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = response.read()
+            try:
+                xml_str = data.decode("utf-8")
+            except UnicodeDecodeError:
+                xml_str = data.decode("iso-8859-9", errors="ignore")
+            
+            # XML parsing
+            root = ET.fromstring(xml_str)
+            channel = root.find('channel')
+            if channel is not None:
+                for item in channel.findall('item')[:10]:
+                    title_elem = item.find('title')
+                    desc_elem = item.find('description')
+                    link_elem = item.find('link')
+                    
+                    title = title_elem.text if title_elem is not None else ""
+                    desc = clean_html(desc_elem.text) if desc_elem is not None else ""
+                    link = link_elem.text if link_elem is not None else ""
+                    
+                    if title:
+                        items.append({
+                            "title": title.strip(),
+                            "summary": desc[:250] + "..." if len(desc) > 250 else desc,
+                            "source_url": link.strip(),
+                            "source_name": "TRT Haber" if "trthaber" in url else "BBC Türkçe",
+                            "category": category
+                        })
+    except Exception:
+        # Hata durumunda boş liste dön, sistem çökmesin
+        pass
+    return items
 
 
 class BriefingService:
-    """Handles generation and retrieval of daily briefings."""
+    """Handles generation and retrieval of daily briefings using live news."""
 
     def __init__(self, db: AsyncSession) -> None:
         """Initialize the briefing service with a database session."""
         self.db = db
 
     async def get_or_create_briefing(self, user_id: str, target_date: date) -> DailyBriefing:
-        """Fetch briefing for a given date, or generate a personalized mock one if not present."""
+        """Fetch briefing for a given date, or generate a personalized one."""
         result = await self.db.execute(
             select(DailyBriefing)
             .where(DailyBriefing.user_id == user_id, DailyBriefing.date == target_date)
@@ -32,21 +86,25 @@ class BriefingService:
         if briefing:
             return briefing
 
-        # Generate a new one
-        return await self.generate_mock_briefing(user_id, target_date)
+        # Gelecek tarihlerin oluşturulmasını engelle (Bugün veya geçmiş olmalı)
+        if target_date > date.today():
+            raise ValueError("Gelecekteki günlerin özeti henüz oluşturulamaz.")
 
-    async def generate_mock_briefing(self, user_id: str, target_date: date) -> DailyBriefing:
-        """Generate a personalized mock briefing based on user preferences and goals."""
-        # Create briefing container
+        # Yeni bir gerçek özet oluştur
+        return await self.generate_live_briefing(user_id, target_date)
+
+    async def generate_live_briefing(self, user_id: str, target_date: date) -> DailyBriefing:
+        """RSS feed'lerinden gerçek haberleri toplayıp ilgi alanlarına göre puanlar."""
+        # Container oluştur
         briefing = DailyBriefing(
             user_id=user_id,
             date=target_date,
             status="ready",
         )
         self.db.add(briefing)
-        await self.db.flush()  # populate briefing.id
+        await self.db.flush()
 
-        # Query user profile details
+        # Kullanıcı verilerini çek
         user_res = await self.db.execute(
             select(User)
             .where(User.id == user_id)
@@ -54,7 +112,6 @@ class BriefingService:
                 selectinload(User.interests),
                 selectinload(User.learning_goals),
                 selectinload(User.career_goals),
-                selectinload(User.news_preferences),
             )
         )
         user = user_res.scalars().first()
@@ -64,158 +121,122 @@ class BriefingService:
         interests: Sequence[UserInterest] = user.interests
         learning_goals: Sequence[LearningGoal] = user.learning_goals
         career_goals: Sequence[CareerGoal] = user.career_goals
-        news_prefs: Sequence[NewsPreference] = user.news_preferences
 
-        items: list[BriefingItem] = []
+        # ── 1. RSS HABERLERİNİ ÇEK ──
+        rss_feeds = [
+            ("https://www.trthaber.com/gundem_articles.rss", "gündem"),
+            ("https://www.trthaber.com/ekonomi_articles.rss", "ekonomi"),
+            ("https://www.trthaber.com/bilim_teknoloji_articles.rss", "teknoloji"),
+            ("https://www.trthaber.com/saglik_articles.rss", "sağlık"),
+            ("https://www.trthaber.com/spor_articles.rss", "spor"),
+        ]
+
+        all_news = []
+        for url, category in rss_feeds:
+            news_items = fetch_rss_feed(url, category)
+            all_news.extend(news_items)
+
+        # Haber bulunamazsa acil durum fallback'i (boş kalmasın)
+        if not all_news:
+            all_news = [
+                {
+                    "title": "Taro Haber Servisi Başlatıldı",
+                    "summary": "Canlı haber kaynaklarına şu an ulaşılamıyor. Haber akışınızı ve internet bağlantınızı kontrol edin.",
+                    "source_url": "https://github.com/TarikAnafarta/taro",
+                    "source_name": "Sistem",
+                    "category": "gündem"
+                }
+            ]
+
+        # ── 2. KİŞİSELLEŞTİRİLMİŞ PUANLAMA ALGORİTMASI ──
+        scored_news = []
+        for news in all_news:
+            # Başlangıç skoru
+            score = 0.50
+            
+            # Kategori eşleşmesi (+0.15)
+            user_categories = [i.category.lower() for i in interests]
+            if news["category"] in user_categories:
+                score += 0.15
+
+            # Anahtar kelime / konu eşleşmesi
+            for interest in interests:
+                topic = interest.topic.lower()
+                # Haber başlığında veya özetinde kelime geçiyor mu?
+                if topic in news["title"].lower() or topic in news["summary"].lower():
+                    # Öncelik değerini de hesaba kat (+0.25 taban + priority puanı)
+                    bonus = 0.20 + (interest.priority * 0.05)
+                    score += bonus
+
+            # Maksimum 1.00 ile sınırla
+            news["relevance_score"] = min(round(score, 2), 1.00)
+            scored_news.append(news)
+
+        # Skorlarına göre azalan sırada sırala
+        scored_news.sort(key=lambda x: x["relevance_score"], reverse=True)
+
+        items_to_add: list[BriefingItem] = []
         sort_order = 0
 
-        # ── 1. Focus Item ─────────────────────────────────────────────────────
-        focus_title = "Focus on foundation building"
-        focus_summary = "Today, spend some time organizing your local workspace and verifying Taro connectivity."
+        # ── 3. GÜNÜN ODAĞI OLUŞTUR (İlgi & Hedeflere göre) ──
+        focus_title = "Günlük Plan ve Odaklanma"
+        focus_summary = "Bugün kişisel ilgi alanlarınızı gözden geçirebilir ve Taro Asistan ile günün planını yapabilirsiniz."
+        
         if learning_goals:
             active_goals = [g for g in learning_goals if g.status == "active"]
             if active_goals:
                 g = random.choice(active_goals)
-                focus_title = f"Deep dive into {g.topic}"
-                focus_summary = f"Dedicate 45 minutes today to studying {g.topic}. Read core documentation or write a small test script to cement your learning."
+                focus_title = f"Öğrenme Odağı: {g.topic}"
+                focus_summary = f"Bugün '{g.topic}' hedefinize 30 dakika zaman ayırın. Araştırma yapabilir veya asistanınızdan bir çalışma planı isteyebilirsiniz."
         elif career_goals:
             active_careers = [c for c in career_goals if c.status == "active"]
             if active_careers:
                 c = random.choice(active_careers)
-                focus_title = f"Advance career goal: {c.goal}"
-                focus_summary = f"Take one actionable step today toward: '{c.goal}'. Draft a task breakdown or research key skills required."
+                focus_title = f"Kariyer Hedefi: {c.goal}"
+                focus_summary = f"'{c.goal}' hedefinize ulaşmak için bugün küçük bir adım atın. Yol haritası çıkarmasını Taro Asistan'dan isteyebilirsiniz."
 
-        items.append(
+        items_to_add.append(
             BriefingItem(
                 briefing_id=briefing.id,
                 category="focus",
                 title=focus_title,
                 summary=focus_summary,
-                relevance_score=0.99,
+                relevance_score=1.00,
                 sort_order=sort_order,
             )
         )
         sort_order += 1
 
-        # ── 2. AI & Tech News ──────────────────────────────────────────────────
-        tech_interests = [i for i in interests if i.category.lower() in ("technology", "science", "programming", "cyber security", "devops")]
-        ai_topics = [i.topic for i in tech_interests]
-        
-        # Fallback topics if empty
-        if not ai_topics:
-            ai_topics = ["Artificial Intelligence", "Python", "Software Engineering"]
-
-        news_templates = [
-            ("Breakthrough in {topic} Agentic Workflows", "Researchers published a paper detailing new agentic loops that reduce hallucination by 34% in local deployments."),
-            ("Next-gen Local LLMs for {topic} Released", "A lightweight model optimized for local inference of {topic} is dominating the open-source benchmarks this week."),
-            ("Security Vulnerability Found in {topic} Frameworks", "A zero-day exploit was disclosed affecting popular orchestration libraries. Security advisories recommend upgrading immediately."),
-            ("The Rise of Devin-like tools in {topic}", "How autonomous agent systems are reshaping code development, build setups, and continuous integration pipelines."),
-        ]
-
-        # Generate 2-3 news items
-        selected_topics = random.sample(ai_topics, min(len(ai_topics), 3))
-        for topic in selected_topics:
-            tmpl_title, tmpl_summary = random.choice(news_templates)
-            items.append(
+        # ── 4. EN YÜKSEK PUANLI HABERLERİ EKLE (Maksimum 5 adet) ──
+        # Aynı başlıkta mükerrer haberlerin eklenmesini engelle
+        seen_titles = set()
+        added_count = 0
+        for news in scored_news:
+            if added_count >= 5:
+                break
+            
+            clean_title = news["title"].lower().strip()
+            if clean_title in seen_titles:
+                continue
+            
+            seen_titles.add(clean_title)
+            items_to_add.append(
                 BriefingItem(
                     briefing_id=briefing.id,
-                    category="news",
-                    title=tmpl_title.format(topic=topic),
-                    summary=tmpl_summary.format(topic=topic),
-                    source_name="Taro AI Crawler (Mock)",
-                    source_url="https://github.com/topics/" + topic.lower().replace(" ", "-"),
-                    relevance_score=round(random.uniform(0.75, 0.95), 2),
+                    category=news["category"],
+                    title=news["title"],
+                    summary=news["summary"],
+                    source_name=news["source_name"],
+                    source_url=news["source_url"],
+                    relevance_score=news["relevance_score"],
                     sort_order=sort_order,
                 )
             )
             sort_order += 1
+            added_count += 1
 
-        # ── 3. GitHub Trending ───────────────────────────────────────────────
-        github_repos = [
-            ("ollama/ollama", "Run Llama 3, Mistral, and other large language models locally.", "Go"),
-            ("qdrant/qdrant", "Vector Database for the next generation of AI applications.", "Rust"),
-            ("fastapi/fastapi", "Modern, fast (high-performance), web framework for building APIs.", "Python"),
-            ("nextjs/next.js", "The React Framework for the Web.", "TypeScript"),
-            ("microsoft/autogen", "A framework that enables the development of LLM applications using multiple agents.", "Python"),
-        ]
-        
-        # If user has specific language interests, prioritize them
-        prog_interests = [i.topic.lower() for i in interests if i.category.lower() == "programming"]
-        for repo_path, desc, lang in github_repos:
-            # Add anyway, score higher if matching lang
-            rel = 0.7
-            if lang.lower() in prog_interests:
-                rel = 0.95
-            items.append(
-                BriefingItem(
-                    briefing_id=briefing.id,
-                    category="github",
-                    title=f"Trending: {repo_path} ({lang})",
-                    summary=desc,
-                    source_name="GitHub Trending",
-                    source_url=f"https://github.com/{repo_path}",
-                    relevance_score=rel,
-                    sort_order=sort_order,
-                )
-            )
-            sort_order += 1
-
-        # ── 4. Learning recommendation ───────────────────────────────────────
-        if learning_goals:
-            goal = random.choice(learning_goals)
-            items.append(
-                BriefingItem(
-                    briefing_id=briefing.id,
-                    category="learning",
-                    title=f"Learning Resource: {goal.topic}",
-                    summary=f"Here is a recommended study outline for {goal.topic}: 1. Review architecture fundamentals. 2. Build a local playground container. 3. Hook up health probes. Check GitHub for starter templates.",
-                    source_name="Taro Coach",
-                    relevance_score=0.9,
-                    sort_order=sort_order,
-                )
-            )
-            sort_order += 1
-
-        # ── 5. Career opportunity ──────────────────────────────────────────
-        career_focus = "General Engineering"
-        if career_goals:
-            career_focus = random.choice(career_goals).goal
-        
-        items.append(
-            BriefingItem(
-                briefing_id=briefing.id,
-                category="career",
-                title=f"Career Growth Strategy for: '{career_focus}'",
-                summary="Build a public GitHub repository demonstrating this skill. Write a clean README detailing your design choices, and share the post on your professional network.",
-                source_name="Taro Career Advisor",
-                relevance_score=0.85,
-                sort_order=sort_order,
-            )
-        )
-        sort_order += 1
-
-        # ── 6. Fitness / Health (if interest exists) ──────────────────────────
-        fitness_interests = [i for i in interests if i.category.lower() in ("health", "fitness")]
-        if fitness_interests:
-            fit_topics = [f.topic for f in fitness_interests]
-            fit_text = "Focus on a balanced workout today. Target a 30-minute high-intensity cardio session followed by recovery stretching."
-            if "Nutrition" in fit_topics:
-                fit_text += " Hydrate well (at least 3L of water) and prioritize protein synthesis."
-            items.append(
-                BriefingItem(
-                    briefing_id=briefing.id,
-                    category="fitness",
-                    title="Daily Physical Conditioning Advice",
-                    summary=fit_text,
-                    source_name="Taro Health Agent",
-                    relevance_score=0.8,
-                    sort_order=sort_order,
-                )
-            )
-            sort_order += 1
-
-        # Save items to database
-        for item in items:
+        # DB'ye ekle
+        for item in items_to_add:
             self.db.add(item)
         
         await self.db.commit()

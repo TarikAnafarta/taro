@@ -39,7 +39,7 @@ export default function LoginPage() {
           <span className={styles.logoIcon}>🌿</span>
           <span className={styles.logoText}>Taro</span>
         </div>
-        <p className={styles.subtitle}>Kişisel Yapay Zeka İşletim Sistemi</p>
+        <p className={styles.subtitle}>Kişisel Yapay Zeka Asistanı ve Bilgi Merkezi</p>
 
         {error && <div className={styles.errorAlert}>{error}</div>}
 

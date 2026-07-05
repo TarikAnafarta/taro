@@ -11,6 +11,7 @@ export default function DailyBriefingPage() {
   const [error, setError] = useState<string | null>(null);
   const [briefing, setBriefing] = useState<DailyBriefing | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [feedbackSent, setFeedbackSent] = useState<Record<string, 'like' | 'dislike'>>({});
 
   const formatDateString = (d: Date) => {
     return d.toISOString().split('T')[0];
@@ -44,6 +45,7 @@ export default function DailyBriefingPage() {
     try {
       const res = await briefingApi.generate();
       setBriefing(res);
+      setFeedbackSent({}); // Yeni özet üretildiğinde geri bildirimleri temizle
     } catch (err: any) {
       setError(err.detail || 'Özet oluşturulamadı');
     } finally {
@@ -51,28 +53,54 @@ export default function DailyBriefingPage() {
     }
   };
 
+  const isToday = (d: Date) => {
+    const today = new Date();
+    return d.getDate() === today.getDate() &&
+           d.getMonth() === today.getMonth() &&
+           d.getFullYear() === today.getFullYear();
+  };
+
   const navigateDay = (offset: number) => {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + offset);
+    
+    // Gelecek tarih engelleme kontrolü
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(newDate);
+    target.setHours(0, 0, 0, 0);
+
+    if (target > today) {
+      return; 
+    }
     setCurrentDate(newDate);
+  };
+
+  const handleFeedback = async (itemId: string, type: 'like' | 'dislike') => {
+    try {
+      await briefingApi.sendFeedback(itemId, type);
+      setFeedbackSent(prev => ({ ...prev, [itemId]: type }));
+    } catch (err: any) {
+      console.error("Geri bildirim gönderilemedi:", err);
+    }
   };
 
   const getCategoryTheme = (category: string) => {
     switch (category.toLowerCase()) {
       case 'focus':
-        return { icon: '🎯', label: 'Bugünün Odağı', color: 'var(--color-accent, #8b5cf6)', border: '1px solid rgba(139, 92, 246, 0.3)' };
-      case 'news':
-        return { icon: '📰', label: 'Yapay Zeka & Teknoloji', color: 'var(--color-primary, #3b82f6)', border: '1px solid rgba(59, 130, 246, 0.3)' };
-      case 'github':
-        return { icon: '📊', label: 'GitHub Trendleri', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' };
-      case 'learning':
-        return { icon: '📚', label: 'Öğrenme Takibi', color: '#ec4899', border: '1px solid rgba(236, 72, 153, 0.3)' };
-      case 'career':
-        return { icon: '💼', label: 'Kariyer Gelişimi', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)' };
-      case 'fitness':
-        return { icon: '💪', label: 'Sağlık & Spor', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.3)' };
+        return { icon: '🎯', label: 'Bugünün Odağı', color: 'var(--color-accent, #8b5cf6)' };
+      case 'gündem':
+        return { icon: '📰', label: 'Gündem', color: 'var(--color-primary, #3b82f6)' };
+      case 'teknoloji':
+        return { icon: '💻', label: 'Teknoloji & Bilim', color: '#00d2ff' };
+      case 'ekonomi':
+        return { icon: '💰', label: 'Ekonomi & Finans', color: '#10b981' };
+      case 'sağlık':
+        return { icon: '🥦', label: 'Sağlık & Yaşam', color: '#ec4899' };
+      case 'spor':
+        return { icon: '⚽', label: 'Spor', color: '#f59e0b' };
       default:
-        return { icon: '💡', label: 'Bilgi', color: 'var(--color-text-secondary)', border: '1px solid rgba(255,255,255,0.08)' };
+        return { icon: '💡', label: category, color: 'var(--color-text-secondary)' };
     }
   };
 
@@ -85,7 +113,14 @@ export default function DailyBriefingPage() {
           <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>
             {currentDate.toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </h2>
-          <button onClick={() => navigateDay(1)} className="btn btn-secondary" style={{ padding: '8px 12px' }}>▶</button>
+          <button 
+            onClick={() => navigateDay(1)} 
+            className="btn btn-secondary" 
+            style={{ padding: '8px 12px' }}
+            disabled={isToday(currentDate)}
+          >
+            ▶
+          </button>
         </div>
 
         <button
@@ -94,7 +129,7 @@ export default function DailyBriefingPage() {
           disabled={generating}
           id="generate-briefing-btn"
         >
-          {generating ? 'Oluşturuluyor...' : '🔄 Özet Oluştur'}
+          {generating ? 'Haberler Alınıyor...' : '🔄 Haberleri Yenile'}
         </button>
       </div>
 
@@ -149,6 +184,9 @@ export default function DailyBriefingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
             {briefing.items.filter(i => i.category !== 'focus').map((item) => {
               const theme = getCategoryTheme(item.category);
+              const hasLiked = feedbackSent[item.id] === 'like';
+              const hasDisliked = feedbackSent[item.id] === 'dislike';
+              
               return (
                 <div
                   key={item.id}
@@ -159,7 +197,7 @@ export default function DailyBriefingPage() {
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    minHeight: '200px'
+                    minHeight: '220px'
                   }}
                 >
                   <div>
@@ -175,7 +213,7 @@ export default function DailyBriefingPage() {
                         fontSize: '0.7rem',
                         color: 'var(--color-text-secondary)'
                       }}>
-                        İlgi: {Math.round(item.relevance_score * 100)}%
+                        Eşleşme: {Math.round(item.relevance_score * 100)}%
                       </span>
                     </div>
                     <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', color: '#fff', fontWeight: 600, lineHeight: 1.4 }}>
@@ -186,21 +224,68 @@ export default function DailyBriefingPage() {
                     </p>
                   </div>
 
-                  {item.source_url && (
-                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                        Kaynak: {item.source_name || 'Web'}
-                      </span>
-                      <a
-                        href={item.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-primary)' }}
+                  <div>
+                    {/* Like / Dislike Butonları */}
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem' }}>
+                      <button
+                        onClick={() => handleFeedback(item.id, 'like')}
+                        disabled={!!feedbackSent[item.id]}
+                        style={{
+                          background: hasLiked ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.03)',
+                          border: hasLiked ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.08)',
+                          color: hasLiked ? '#10b981' : 'var(--color-text-secondary)',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
                       >
-                        Bağlantıyı Aç ↗
-                      </a>
+                        👍 İlgimi Çekti
+                      </button>
+                      <button
+                        onClick={() => handleFeedback(item.id, 'dislike')}
+                        disabled={!!feedbackSent[item.id]}
+                        style={{
+                          background: hasDisliked ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.03)',
+                          border: hasDisliked ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.08)',
+                          color: hasDisliked ? '#ef4444' : 'var(--color-text-secondary)',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        👎 İlgimi Çekmedi
+                      </button>
+                      {feedbackSent[item.id] && (
+                        <span style={{ fontSize: '0.75rem', color: '#10b981', alignSelf: 'center', marginLeft: 'auto' }}>
+                          Kaydedildi!
+                        </span>
+                      )}
                     </div>
-                  )}
+
+                    {item.source_url && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                          Kaynak: {item.source_name || 'Web'}
+                        </span>
+                        <a
+                          href={item.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-primary)' }}
+                        >
+                          Bağlantıyı Aç ↗
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -209,12 +294,12 @@ export default function DailyBriefingPage() {
       ) : (
         <div className="card card-glass" style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '3rem' }}>📭</span>
-          <h3 style={{ margin: 0, color: '#fff' }}>Bu tarih için özet bulunamadı</h3>
+          <h3 style={{ margin: 0, color: '#fff' }}>Bugün için özet bulunamadı</h3>
           <p style={{ margin: 0, color: 'var(--color-text-secondary)', maxWidth: '400px', fontSize: '0.95rem' }}>
-            Bu tarih için henüz bir özet oluşturulmamış. Kişiselleştirilmiş özet oluşturmak için tıklayın.
+            Güncel haber kaynaklarından canlı haberleri çekip kişiselleştirilmiş özetinizi oluşturmak için aşağıdaki butona tıklayın.
           </p>
           <button onClick={handleGenerate} className="btn btn-primary" style={{ marginTop: '1rem' }}>
-            Özet Oluştur
+            Haberleri Getir & Özetle
           </button>
         </div>
       )}

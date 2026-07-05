@@ -11,7 +11,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from taro_api.db.database import get_db
-from taro_api.db.models import User, DailyBriefing, BriefingItem
+from taro_api.db.models import User, DailyBriefing, BriefingItem, UserInterest
 from taro_api.auth.security import get_current_user
 from taro_api.services.briefing_service import BriefingService
 
@@ -37,6 +37,11 @@ class DailyBriefingModel(BaseModel):
     generated_at: str
     status: str
     items: List[BriefingItemModel]
+
+
+class FeedbackPayload(BaseModel):
+    """Payload for giving feedback to a briefing item."""
+    feedback: str  # "like" | "dislike"
 
 
 @router.get("/briefing/today", response_model=DailyBriefingModel)
@@ -92,8 +97,15 @@ async def get_briefing_by_date(
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid date format, use YYYY-MM-DD",
+            detail="Geçersiz tarih formatı, YYYY-MM-DD kullanın",
         ) from exc
+
+    # Gelecek tarihler engellenir
+    if target_dt > datetime.date.today():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Gelecekteki günlerin özeti henüz oluşturulamaz.",
+        )
 
     briefing_svc = BriefingService(db)
     briefing = await briefing_svc.get_or_create_briefing(current_user.id, target_dt)
@@ -185,7 +197,8 @@ async def generate_briefing(
         .where(DailyBriefing.user_id == current_user.id, DailyBriefing.date == today)
     )
     
-    briefing = await briefing_svc.generate_mock_briefing(current_user.id, today)
+    # Canlı haberleri çeken metot çağrılır
+    briefing = await briefing_svc.generate_live_briefing(current_user.id, today)
 
     # Re-fetch
     res = await db.execute(
@@ -195,7 +208,7 @@ async def generate_briefing(
     )
     briefing = res.scalars().first()
     if not briefing:
-        raise HTTPException(status_code=500, detail="Failed to retrieve generated briefing")
+        raise HTTPException(status_code=500, detail="Generated briefing not found")
 
     return DailyBriefingModel(
         id=briefing.id,
@@ -216,3 +229,48 @@ async def generate_briefing(
             for item in sorted(briefing.items, key=lambda x: x.sort_order)
         ],
     )
+
+
+@router.post("/briefing/items/{item_id}/feedback")
+async def item_feedback(
+    item_id: str,
+    payload: FeedbackPayload,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Haber öğesi için geri bildirim (like/dislike) kaydeder ve ilgi önceliğini günceller."""
+    res = await db.execute(select(BriefingItem).where(BriefingItem.id == item_id))
+    item = res.scalars().first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Haber bulunamadı")
+    
+    category = item.category
+    
+    # Kullanıcının bu kategorideki ilgilerini bul
+    interest_res = await db.execute(
+        select(UserInterest)
+        .where(UserInterest.user_id == current_user.id, UserInterest.category == category)
+    )
+    interests = interest_res.scalars().all()
+    
+    if payload.feedback == "like":
+        match_found = False
+        for interest in interests:
+            interest.priority += 1
+            match_found = True
+        if not match_found:
+            new_interest = UserInterest(
+                user_id=current_user.id,
+                category=category,
+                topic=category,  # Kategori adını doğrudan konu yap
+                priority=1
+            )
+            db.add(new_interest)
+            
+    elif payload.feedback == "dislike":
+        for interest in interests:
+            # Önceliği düşür, 0'a indikten sonra da bir miktar eksiye inebilir
+            interest.priority = max(-5, interest.priority - 1)
+            
+    await db.commit()
+    return {"status": "ok", "message": "Geri bildirim kaydedildi. Bir sonraki haber üretiminde bu kategori önceliklendirilecektir."}

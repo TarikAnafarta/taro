@@ -7,8 +7,8 @@ import AppLayout from "@/components/layout/AppLayout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Taro — Kişisel Yapay Zeka OS",
-  description: "Dağıtık kişisel yapay zeka işletim sistemi ve ikinci beyin",
+  title: "Taro — Kişisel Yapay Zeka Asistanı",
+  description: "Dağıtık kişisel yapay zeka asistanı ve ikinci beyin",
 };
 
 export default function RootLayout({

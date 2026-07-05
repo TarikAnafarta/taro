@@ -41,7 +41,7 @@ class TaroSettings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # ── AI model defaults ──────────────────────────────────────────────
-    TARO_CHAT_MODEL: str = "qwen2.5:7b"
+    TARO_CHAT_MODEL: str = "qwen2.5:3b"
     TARO_EMBEDDING_MODEL: str = "nomic-embed-text"
 
     # ── Authentication ─────────────────────────────────────────────────

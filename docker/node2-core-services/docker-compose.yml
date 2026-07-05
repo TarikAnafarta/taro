@@ -114,7 +114,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - NATS_URL=nats://nats:4222
       - NODE1_AI_GATEWAY_URL=http://${NODE1_HOST}:8100
-      - TARO_CHAT_MODEL=${TARO_CHAT_MODEL:-qwen2.5:7b}
+      - TARO_CHAT_MODEL=${TARO_CHAT_MODEL:-qwen2.5:3b}
       - TARO_EMBEDDING_MODEL=${TARO_EMBEDDING_MODEL:-nomic-embed-text}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRY_MINUTES=${JWT_EXPIRY_MINUTES:-60}

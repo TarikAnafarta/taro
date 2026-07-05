@@ -107,7 +107,7 @@ export default function SystemPage() {
               <div>
                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Varsayılan LLM Modeller</span>
                 <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-primary)', marginTop: '0.25rem' }}>
-                  {sysInfo.active_models?.join(', ') || 'qwen2.5:7b, nomic-embed-text'}
+                  {sysInfo.active_models?.join(', ') || 'qwen2.5:3b, nomic-embed-text'}
                 </div>
               </div>
             </div>
