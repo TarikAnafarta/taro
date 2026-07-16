@@ -4,19 +4,25 @@
   width: 100vw;
   align-items: center;
   justify-content: center;
-  background-color: #070913;
+  background-color: var(--bg-secondary);
   padding: 1.5rem;
   box-sizing: border-box;
 }
 
 .card {
   width: 100%;
-  max-width: 400px;
-  background: #0d111d;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 2.5rem;
+  max-width: 420px;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 3rem 2.5rem;
   box-sizing: border-box;
+  box-shadow: var(--shadow-xl);
+  transition: all var(--transition-slow);
+}
+
+.card:hover {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
 
 .logoSection {
@@ -27,34 +33,38 @@
 }
 
 .logoText {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: -0.03em;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.05em;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
   text-align: center;
-  font-size: 0.85rem;
-  color: var(--color-text-secondary, #9ca3af);
-  margin-bottom: 2rem;
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 2.5rem;
 }
 
 .errorAlert {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: var(--color-danger, #ef4444);
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  background: var(--color-danger-light);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--color-danger);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
   margin-bottom: 1.5rem;
   text-align: center;
+  animation: fadeIn 300ms ease;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .formGroup {
@@ -64,39 +74,49 @@
 }
 
 .label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-text-secondary, #9ca3af);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
 }
 
 .input {
-  background: #141a29;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  color: var(--color-text, #f9fafb);
-  font-size: 0.95rem;
-  transition: border-color 0.2s ease;
+  background: var(--bg-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1rem;
+  color: var(--color-text);
+  font-size: 1rem;
+  transition: all var(--transition-base);
   outline: none;
 }
 
 .input:focus {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-light);
+  background: var(--bg-card-solid);
 }
 
 .switchPage {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   text-align: center;
-  font-size: 0.85rem;
-  color: var(--color-text-muted, #6b7280);
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
 }
 
 .link {
-  color: var(--color-text, #f9fafb);
-  font-weight: 500;
-  text-decoration: underline;
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 .link:hover {
-  color: #fff;
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 2rem 1.5rem;
+  }
 }

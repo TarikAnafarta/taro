@@ -54,11 +54,25 @@ def fetch_rss_feed(url: str, category: str) -> list[dict]:
                     link = link_elem.text if link_elem is not None else ""
                     
                     if title:
+                        source_name = "Diğer"
+                        if "trthaber" in url:
+                            source_name = "TRT Haber"
+                        elif "ntv.com.tr" in url:
+                            source_name = "NTV"
+                        elif "haberturk.com" in url:
+                            source_name = "Habertürk"
+                        elif "webtekno.com" in url:
+                            source_name = "Webtekno"
+                        elif "shiftdelete.net" in url:
+                            source_name = "ShiftDelete"
+                        elif "fotomac.com.tr" in url:
+                            source_name = "Fotomaç"
+
                         items.append({
                             "title": title.strip(),
                             "summary": desc[:250] + "..." if len(desc) > 250 else desc,
                             "source_url": link.strip(),
-                            "source_name": "TRT Haber" if "trthaber" in url else "BBC Türkçe",
+                            "source_name": source_name,
                             "category": category
                         })
     except Exception:
@@ -124,11 +138,29 @@ class BriefingService:
 
         # ── 1. RSS HABERLERİNİ ÇEK ──
         rss_feeds = [
+            # TRT Haber
             ("https://www.trthaber.com/gundem_articles.rss", "gündem"),
             ("https://www.trthaber.com/ekonomi_articles.rss", "ekonomi"),
             ("https://www.trthaber.com/bilim_teknoloji_articles.rss", "teknoloji"),
             ("https://www.trthaber.com/saglik_articles.rss", "sağlık"),
             ("https://www.trthaber.com/spor_articles.rss", "spor"),
+            
+            # NTV
+            ("https://www.ntv.com.tr/gundem.rss", "gündem"),
+            ("https://www.ntv.com.tr/teknoloji.rss", "teknoloji"),
+            ("https://www.ntv.com.tr/ekonomi.rss", "ekonomi"),
+            ("https://www.ntv.com.tr/saglik.rss", "sağlık"),
+
+            # Habertürk
+            ("https://www.haberturk.com/rss/kategori/ekonomi.xml", "ekonomi"),
+            ("https://www.haberturk.com/rss/kategori/teknoloji.xml", "teknoloji"),
+            
+            # Teknoloji Siteleri
+            ("https://webtekno.com/rss.xml", "teknoloji"),
+            ("https://shiftdelete.net/feed", "teknoloji"),
+            
+            # Spor
+            ("https://www.fotomac.com.tr/rss/anasayfa.xml", "spor"),
         ]
 
         all_news = []

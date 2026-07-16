@@ -75,3 +75,24 @@
   background-color: var(--color-success, #10b981);
   box-shadow: 0 0 8px var(--color-success, #10b981);
 }
+
+.themeToggle {
+  background: var(--bg-input);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 1.25rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.themeToggle:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--color-primary);
+  transform: scale(1.05);
+}

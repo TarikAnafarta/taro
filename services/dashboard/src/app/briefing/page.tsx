@@ -224,23 +224,24 @@ export default function DailyBriefingPage() {
                     </p>
                   </div>
 
-                  <div>
                     {/* Like / Dislike Butonları */}
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem' }}>
                       <button
                         onClick={() => handleFeedback(item.id, 'like')}
                         disabled={!!feedbackSent[item.id]}
                         style={{
-                          background: hasLiked ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.03)',
-                          border: hasLiked ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.08)',
-                          color: hasLiked ? '#10b981' : 'var(--color-text-secondary)',
-                          padding: '4px 10px',
-                          borderRadius: '8px',
-                          fontSize: '0.8rem',
+                          background: hasLiked ? 'var(--color-success-light)' : 'var(--bg-input)',
+                          border: hasLiked ? '1px solid var(--color-success)' : '1px solid var(--color-border)',
+                          color: hasLiked ? 'var(--color-success)' : 'var(--color-text-secondary)',
+                          padding: '6px 12px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.85rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px'
+                          gap: '6px',
+                          transition: 'all 0.2s ease',
+                          opacity: (feedbackSent[item.id] && !hasLiked) ? 0.5 : 1
                         }}
                       >
                         👍 İlgimi Çekti
@@ -249,16 +250,18 @@ export default function DailyBriefingPage() {
                         onClick={() => handleFeedback(item.id, 'dislike')}
                         disabled={!!feedbackSent[item.id]}
                         style={{
-                          background: hasDisliked ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.03)',
-                          border: hasDisliked ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.08)',
-                          color: hasDisliked ? '#ef4444' : 'var(--color-text-secondary)',
-                          padding: '4px 10px',
-                          borderRadius: '8px',
-                          fontSize: '0.8rem',
+                          background: hasDisliked ? 'var(--color-danger-light)' : 'var(--bg-input)',
+                          border: hasDisliked ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
+                          color: hasDisliked ? 'var(--color-danger)' : 'var(--color-text-secondary)',
+                          padding: '6px 12px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.85rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px'
+                          gap: '6px',
+                          transition: 'all 0.2s ease',
+                          opacity: (feedbackSent[item.id] && !hasDisliked) ? 0.5 : 1
                         }}
                       >
                         👎 İlgimi Çekmedi

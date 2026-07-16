@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   description: "Dağıtık kişisel yapay zeka asistanı ve ikinci beyin",
 };
 
+import { ThemeProvider } from "@/contexts/ThemeContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -19,9 +21,11 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <body className={inter.className}>
-        <AuthProvider>
-          <AppLayout>{children}</AppLayout>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <AppLayout>{children}</AppLayout>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
