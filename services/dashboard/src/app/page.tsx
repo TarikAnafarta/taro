@@ -112,6 +112,16 @@ function DashboardHome() {
         
         setUserProfile(profData);
         setTodayBriefing(todayB);
+        
+        const newFeedback: Record<string, 'like' | 'dislike'> = {};
+        if (todayB?.items) {
+          todayB.items.forEach((item: any) => {
+            if (item.feedback) {
+              newFeedback[item.id] = item.feedback as 'like' | 'dislike';
+            }
+          });
+        }
+        setFeedbackSent(newFeedback);
       } catch (err) {
         console.error('Dashboard verileri yüklenemedi', err);
       } finally {
@@ -119,6 +129,28 @@ function DashboardHome() {
       }
     }
     loadDashboardData();
+
+    // 15 Dakikada bir (900000 ms) otomatik yenileme (POST isteği atarak)
+    const interval = setInterval(async () => {
+      try {
+        const res = await briefing.generate();
+        setTodayBriefing(res);
+        
+        const newFeedback: Record<string, 'like' | 'dislike'> = {};
+        if (res?.items) {
+          res.items.forEach((item: any) => {
+            if (item.feedback) {
+              newFeedback[item.id] = item.feedback as 'like' | 'dislike';
+            }
+          });
+        }
+        setFeedbackSent(newFeedback);
+      } catch (err) {
+        console.error("Otomatik yenileme başarısız:", err);
+      }
+    }, 900000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleFeedback = async (itemId: string, type: 'like' | 'dislike') => {
@@ -166,13 +198,13 @@ function DashboardHome() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        borderBottom: '1px solid var(--color-border)',
         paddingBottom: '1.5rem',
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
         <div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 600, margin: 0, color: '#fff', letterSpacing: '-0.02em' }}>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 600, margin: 0, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>
             Merhaba, {userProfile?.display_name || user?.username || 'Kullanıcı'}
           </h2>
           <p style={{ color: 'var(--color-text-secondary)', margin: '0.4rem 0 0 0', fontSize: '0.9rem' }}>
@@ -190,32 +222,34 @@ function DashboardHome() {
           newsItems.map((item) => {
             const hasLiked = feedbackSent[item.id] === 'like';
             const hasDisliked = feedbackSent[item.id] === 'dislike';
+            const isHighlyRelevant = item.relevance_score > 0.8;
             return (
               <div 
                 key={item.id} 
-                className="card"
+                className={`card card-interactive ${isHighlyRelevant ? 'animate-slideUp' : ''}`}
                 style={{
-                  background: '#0d111d',
+                  background: 'var(--bg-card)',
                   padding: '1.5rem',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  borderRadius: 'var(--radius-lg)',
+                  border: isHighlyRelevant ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  boxShadow: isHighlyRelevant ? 'var(--shadow-glow-primary)' : 'none',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '0.75rem'
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text-secondary, #9ca3af)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     {item.category}
                   </span>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted, #6b7280)' }}>
+                  <span style={{ fontSize: '0.7rem', color: isHighlyRelevant ? 'var(--color-primary)' : 'var(--color-text-muted)', fontWeight: isHighlyRelevant ? 'bold' : 'normal' }}>
                     Eşleşme: {Math.round(item.relevance_score * 100)}%
                   </span>
                 </div>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#fff', fontWeight: 600, lineHeight: 1.4 }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--color-text)', fontWeight: 600, lineHeight: 1.4 }}>
                   {item.title}
                 </h3>
-                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-secondary, #9ca3af)', lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
                   {item.summary}
                 </p>
                 
@@ -224,9 +258,9 @@ function DashboardHome() {
                   <button
                     onClick={() => handleFeedback(item.id, 'like')}
                     style={{
-                      background: hasLiked ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                      border: `1px solid ${hasLiked ? '#fff' : 'rgba(255, 255, 255, 0.15)'}`,
-                      color: hasLiked ? '#fff' : 'var(--color-text-secondary, #9ca3af)',
+                      background: hasLiked ? 'var(--color-primary-light)' : 'transparent',
+                      border: `1px solid ${hasLiked ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                      color: hasLiked ? 'var(--color-primary)' : 'var(--color-text-secondary)',
                       padding: '5px 12px',
                       borderRadius: '6px',
                       fontSize: '0.75rem',
@@ -239,9 +273,9 @@ function DashboardHome() {
                   <button
                     onClick={() => handleFeedback(item.id, 'dislike')}
                     style={{
-                      background: hasDisliked ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
-                      border: `1px solid ${hasDisliked ? 'var(--color-danger, #ef4444)' : 'rgba(255, 255, 255, 0.15)'}`,
-                      color: hasDisliked ? 'var(--color-danger, #ef4444)' : 'var(--color-text-secondary, #9ca3af)',
+                      background: hasDisliked ? 'var(--color-danger-light)' : 'transparent',
+                      border: `1px solid ${hasDisliked ? 'var(--color-danger)' : 'var(--color-border)'}`,
+                      color: hasDisliked ? 'var(--color-danger)' : 'var(--color-text-secondary)',
                       padding: '5px 12px',
                       borderRadius: '6px',
                       fontSize: '0.75rem',
@@ -275,8 +309,8 @@ function DashboardHome() {
           <div style={{
             padding: '4rem 2rem',
             textAlign: 'center',
-            color: 'var(--color-text-secondary, #9ca3af)',
-            border: '1px dashed rgba(255, 255, 255, 0.08)',
+            color: 'var(--color-text-secondary)',
+            border: '1px dashed var(--color-border)',
             borderRadius: '12px',
             display: 'flex',
             flexDirection: 'column',

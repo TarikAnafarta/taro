@@ -7,22 +7,22 @@
 /* ── CSS Variables / Design Tokens ────────────────────────── */
 
 :root {
-  /* Background (Light Theme - White & Light Blue) */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f0f7ff;
-  --bg-tertiary: #e0efff;
-  --bg-card: rgba(255, 255, 255, 0.8);
+  /* Background (Light Theme - White & Light Slate) */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-tertiary: #e2e8f0;
+  --bg-card: rgba(255, 255, 255, 0.9);
   --bg-card-hover: rgba(255, 255, 255, 1);
   --bg-card-solid: #ffffff;
-  --bg-input: #f9fafb;
+  --bg-input: #f8fafc;
   --bg-sidebar: #ffffff;
-  --bg-overlay: rgba(0, 0, 0, 0.4);
+  --bg-overlay: rgba(15, 23, 42, 0.4);
 
-  /* Primary / Accent (Light Green & Blue) */
-  --color-primary: #0284c7;
-  --color-primary-hover: #0369a1;
-  --color-primary-light: rgba(2, 132, 199, 0.15);
-  --color-primary-glow: rgba(2, 132, 199, 0.3);
+  /* Primary / Accent (Turquoise & Light Green) */
+  --color-primary: #0d9488;
+  --color-primary-hover: #0f766e;
+  --color-primary-light: rgba(13, 148, 136, 0.15);
+  --color-primary-glow: rgba(13, 148, 136, 0.3);
   --color-accent: #10b981;
   --color-accent-hover: #059669;
   --color-accent-light: rgba(16, 185, 129, 0.15);
@@ -36,15 +36,15 @@
   --color-danger-light: rgba(239, 68, 68, 0.15);
   --color-info: #06b6d4;
 
-  /* Text */
-  --color-text: #1f2937;
-  --color-text-secondary: #4b5563;
-  --color-text-muted: #9ca3af;
+  /* Text (Dark Slate for Contrast) */
+  --color-text: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
   --color-text-inverse: #ffffff;
 
   /* Borders */
-  --color-border: #e2e8f0;
-  --color-border-hover: #cbd5e1;
+  --color-border: #cbd5e1;
+  --color-border-hover: #94a3b8;
   --color-border-focus: var(--color-primary);
 
   /* Radius */
@@ -60,8 +60,8 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  --shadow-glow-primary: 0 0 20px rgba(2, 132, 199, 0.2);
-  --shadow-glow-accent: 0 0 20px rgba(16, 185, 129, 0.2);
+  --shadow-glow-primary: 0 0 20px rgba(13, 148, 136, 0.3);
+  --shadow-glow-accent: 0 0 20px rgba(16, 185, 129, 0.3);
 
   /* Glass */
   --glass-blur: blur(16px);
@@ -841,4 +841,23 @@ p {
 
 [data-tooltip]:hover::after {
   opacity: 1;
+}
+
+/* ── Custom Animations & Effects ─────────────────────────── */
+
+@keyframes slideUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.card-interactive {
+  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.card-interactive:hover {
+  transform: translateY(-2px);
 }

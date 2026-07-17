@@ -381,18 +381,6 @@ export default function OnboardingPage() {
                         {opt === 'kultur-sanat' ? 'Kültür & Sanat' : opt}
                       </span>
                     </div>
-                    {config.active && (
-                      <select
-                        className="select"
-                        style={{ width: 'auto', padding: '0.25rem 0.5rem' }}
-                        value={config.frequency}
-                        onChange={(e) => handleFrequencyChange(opt, e.target.value as any)}
-                      >
-                        <option value="daily">Günlük</option>
-                        <option value="every_6h">Her 6 Saatte</option>
-                        <option value="weekly">Haftalık</option>
-                      </select>
-                    )}
                   </div>
                 );
               })}

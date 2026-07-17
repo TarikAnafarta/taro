@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './Sidebar.module.css';
 
-export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
+export default function Sidebar({ isOpen, onClose, isCollapsed }: { isOpen?: boolean; onClose?: () => void; isCollapsed?: boolean }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
@@ -18,10 +18,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
   ];
 
   return (
-    <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
+    <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''} ${isCollapsed ? styles.sidebarCollapsed : ''}`}>
       <div className={styles.logoContainer}>
-        <span className={styles.logoText}>Taro</span>
-        {onClose && (
+        <span className={styles.logoText}>{isCollapsed ? 'T' : 'Taro'}</span>
+        {onClose && !isCollapsed && (
           <button onClick={onClose} className={styles.closeButton} aria-label="Menüyü Kapat">
             ✕
           </button>
@@ -38,8 +38,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                   href={item.path}
                   onClick={onClose}
                   className={`${styles.navLink} ${isActive ? styles.navLinkActive : ''}`}
+                  title={item.name}
                 >
-                  <span className={styles.itemText}>{item.name}</span>
+                  <span className={styles.itemText}>{isCollapsed ? item.name.substring(0, 1) : item.name}</span>
                 </Link>
               </li>
             );
@@ -48,16 +49,18 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       </nav>
 
       <div className={styles.footer}>
-        <div className={styles.userSection}>
-          <div className={styles.avatar}>
-            {user?.username?.substring(0, 2).toUpperCase() || 'TR'}
+        {!isCollapsed && (
+          <div className={styles.userSection}>
+            <div className={styles.avatar}>
+              {user?.username?.substring(0, 2).toUpperCase() || 'TR'}
+            </div>
+            <div className={styles.userInfo}>
+              <div className={styles.username}>{user?.username || 'Kullanıcı'}</div>
+            </div>
           </div>
-          <div className={styles.userInfo}>
-            <div className={styles.username}>{user?.username || 'Kullanıcı'}</div>
-          </div>
-        </div>
-        <button onClick={logout} className={styles.logoutBtn} id="logout-button">
-          Çıkış
+        )}
+        <button onClick={logout} className={styles.logoutBtn} id="logout-button" title="Çıkış">
+          {isCollapsed ? '🚪' : 'Çıkış'}
         </button>
       </div>
     </aside>

@@ -11,7 +11,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, isOnboarded, isLoading } = useAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const isAuthPage = pathname === '/login' || pathname === '/register';
   const isOnboardingPage = pathname === '/onboarding';
@@ -62,7 +62,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (isAuthenticated && isOnboarded) {
     return (
       <div className="app-layout">
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isCollapsed={!isSidebarOpen} />
         {isSidebarOpen && (
           <div
             onClick={() => setIsSidebarOpen(false)}
@@ -76,9 +76,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               backdropFilter: 'blur(2px)',
               zIndex: 999,
             }}
+            className="mobile-overlay"
           />
         )}
-        <div className="app-main">
+        <div className={`app-main ${!isSidebarOpen ? 'sidebar-collapsed' : ''}`}>
           <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
           <main className="app-content">
             {children}

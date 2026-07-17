@@ -91,7 +91,33 @@ async def send_chat_message(
         .order_by(Message.created_at.asc())
     )
     history = hist_res.scalars().all()
-    messages_payload = [{"role": msg.role, "content": msg.content} for msg in history]
+    # RAG: Fetch the latest briefing items to use as context
+    from taro_api.db.models import DailyBriefing, BriefingItem
+    from sqlalchemy.orm import selectinload
+    briefing_res = await db.execute(
+        select(DailyBriefing)
+        .where(DailyBriefing.user_id == current_user.id)
+        .order_by(DailyBriefing.date.desc())
+        .limit(1)
+        .options(selectinload(DailyBriefing.items))
+    )
+    latest_briefing = briefing_res.scalars().first()
+    
+    rag_context = ""
+    if latest_briefing and latest_briefing.items:
+        news_texts = []
+        for item in latest_briefing.items:
+            if item.category != 'focus':
+                news_texts.append(f"[{item.category.upper()}] {item.title}: {item.summary}")
+        
+        if news_texts:
+            rag_context = "Aşağıdaki haber özetleri kullanıcının ilgi alanlarına göre bu hafta/bugün derlenmiş güncel haberlerdir. Kullanıcı güncel haberleri sorarsa bu bilgileri baz alarak cevap ver:\n" + "\n".join(news_texts)
+
+    messages_payload = []
+    if rag_context:
+        messages_payload.append({"role": "system", "content": rag_context})
+
+    messages_payload.extend([{"role": msg.role, "content": msg.content} for msg in history])
 
     # Invoke AI Gateway completions
     ai = AIClient()

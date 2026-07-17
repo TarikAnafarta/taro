@@ -24,6 +24,16 @@ export default function DailyBriefingPage() {
       const dateStr = formatDateString(d);
       const res = await briefingApi.getByDate(dateStr);
       setBriefing(res);
+      
+      const newFeedback: Record<string, 'like' | 'dislike'> = {};
+      if (res.items) {
+        res.items.forEach((item: any) => {
+          if (item.feedback) {
+            newFeedback[item.id] = item.feedback as 'like' | 'dislike';
+          }
+        });
+      }
+      setFeedbackSent(newFeedback);
     } catch (err: any) {
       if (err.status === 404) {
         setBriefing(null);
@@ -45,7 +55,16 @@ export default function DailyBriefingPage() {
     try {
       const res = await briefingApi.generate();
       setBriefing(res);
-      setFeedbackSent({}); // Yeni özet üretildiğinde geri bildirimleri temizle
+      
+      const newFeedback: Record<string, 'like' | 'dislike'> = {};
+      if (res.items) {
+        res.items.forEach((item: any) => {
+          if (item.feedback) {
+            newFeedback[item.id] = item.feedback as 'like' | 'dislike';
+          }
+        });
+      }
+      setFeedbackSent(newFeedback);
     } catch (err: any) {
       setError(err.detail || 'Özet oluşturulamadı');
     } finally {
@@ -152,34 +171,6 @@ export default function DailyBriefingPage() {
         </div>
       ) : briefing && briefing.items.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-          {/* Önce Odak Öğesini Göster */}
-          {briefing.items.filter(i => i.category === 'focus').map((item) => {
-            const theme = getCategoryTheme(item.category);
-            return (
-              <div
-                key={item.id}
-                className="card card-glass"
-                style={{
-                  padding: '2rem',
-                  borderLeft: `4px solid ${theme.color}`,
-                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(17, 24, 39, 0.7))'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span style={{ color: theme.color, fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {theme.icon} {theme.label}
-                  </span>
-                </div>
-                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', color: '#fff', fontWeight: 700 }}>
-                  {item.title}
-                </h3>
-                <p style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-                  {item.summary}
-                </p>
-              </div>
-            );
-          })}
-
           {/* Diğer kategoriler */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
             {briefing.items.filter(i => i.category !== 'focus').map((item) => {

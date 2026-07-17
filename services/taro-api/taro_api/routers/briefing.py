@@ -28,6 +28,7 @@ class BriefingItemModel(BaseModel):
     source_name: Optional[str] = None
     relevance_score: float = 0.0
     sort_order: int = 0
+    feedback: Optional[str] = None
 
 
 class DailyBriefingModel(BaseModel):
@@ -79,6 +80,7 @@ async def get_today_briefing(
                 source_name=item.source_name,
                 relevance_score=item.relevance_score,
                 sort_order=item.sort_order,
+                feedback=item.metadata_.get("feedback") if item.metadata_ else None,
             )
             for item in sorted(briefing.items, key=lambda x: x.sort_order)
         ],
@@ -135,6 +137,7 @@ async def get_briefing_by_date(
                 source_name=item.source_name,
                 relevance_score=item.relevance_score,
                 sort_order=item.sort_order,
+                feedback=item.metadata_.get("feedback") if item.metadata_ else None,
             )
             for item in sorted(briefing.items, key=lambda x: x.sort_order)
         ],
@@ -173,6 +176,7 @@ async def get_briefing_history(
                     source_name=item.source_name,
                     relevance_score=item.relevance_score,
                     sort_order=item.sort_order,
+                    feedback=item.metadata_.get("feedback") if item.metadata_ else None,
                 )
                 for item in sorted(b.items, key=lambda x: x.sort_order)
             ],
@@ -225,6 +229,7 @@ async def generate_briefing(
                 source_name=item.source_name,
                 relevance_score=item.relevance_score,
                 sort_order=item.sort_order,
+                feedback=item.metadata_.get("feedback") if item.metadata_ else None,
             )
             for item in sorted(briefing.items, key=lambda x: x.sort_order)
         ],
@@ -271,6 +276,11 @@ async def item_feedback(
         for interest in interests:
             # Önceliği düşür, 0'a indikten sonra da bir miktar eksiye inebilir
             interest.priority = max(-5, interest.priority - 1)
+            
+    # Save feedback to metadata
+    meta = dict(item.metadata_ or {})
+    meta["feedback"] = payload.feedback
+    item.metadata_ = meta
             
     await db.commit()
     return {"status": "ok", "message": "Geri bildirim kaydedildi. Bir sonraki haber üretiminde bu kategori önceliklendirilecektir."}

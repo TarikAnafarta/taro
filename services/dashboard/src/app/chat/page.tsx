@@ -262,7 +262,7 @@ export default function ChatPage() {
               <span style={{ fontSize: '3rem' }}>🌿</span>
               <h3 style={{ margin: 0, color: '#fff' }}>Ben Taro</h3>
               <p style={{ margin: 0, fontSize: '0.9rem', textAlign: 'center', maxWidth: '360px' }}>
-                Soru sorabilir, günlük haber uyarıları ayarlayabilir veya konuları araştırabilirim. Düğüm 1 ağ geçidi modelleriyle iletişim kuracağım.
+                Soru sorabilir, günlük haber uyarıları ayarlayabilir veya konuları araştırabilirim.
               </p>
             </div>
           )}
