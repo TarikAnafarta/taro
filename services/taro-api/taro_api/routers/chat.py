@@ -104,9 +104,13 @@ async def send_chat_message(
     rag_context = ""
     if latest_briefing and latest_briefing.items:
         news_texts = []
+        count = 0
         for item in latest_briefing.items:
             if item.category != 'focus':
                 news_texts.append(f"[{item.category.upper()}] {item.title}: {item.summary}")
+                count += 1
+                if count >= 5:
+                    break
         
         if news_texts:
             rag_context = "Aşağıdaki haber özetleri kullanıcının ilgi alanlarına göre bu hafta/bugün derlenmiş güncel haberlerdir. Kullanıcı güncel haberleri sorarsa bu bilgileri baz alarak cevap ver:\n" + "\n".join(news_texts)
