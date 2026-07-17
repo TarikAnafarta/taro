@@ -55,14 +55,13 @@ async def send_chat_message(
     db: AsyncSession = Depends(get_db),
 ) -> ChatResponseModel:
     """Send a user message to the AI and receive a structured reply."""
-    # Find or create conversation
+    # ── 1. Find or create conversation ─────────────────────────────────
     conv_id = payload.conversation_id
     conversation = None
     if conv_id:
         res = await db.execute(
             select(Conversation)
             .where(Conversation.id == conv_id, Conversation.user_id == current_user.id)
-            .options(selectinload(Conversation.messages))
         )
         conversation = res.scalars().first()
 
@@ -75,7 +74,7 @@ async def send_chat_message(
         db.add(conversation)
         await db.flush()  # populate conversation.id
 
-    # Create user message
+    # ── 2. Save user message ────────────────────────────────────────────
     user_msg = Message(
         conversation_id=conversation.id,
         role="user",
@@ -84,14 +83,15 @@ async def send_chat_message(
     db.add(user_msg)
     await db.flush()
 
-    # Re-fetch conversation history to build prompts
+    # ── 3. Re-fetch conversation history ───────────────────────────────
     hist_res = await db.execute(
         select(Message)
         .where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at.asc())
     )
     history = hist_res.scalars().all()
-    # RAG: Fetch the latest briefing items to use as context
+
+    # ── 4. RAG: Fetch latest user briefing (max 5 items) ───────────────
     briefing_res = await db.execute(
         select(DailyBriefing)
         .where(DailyBriefing.user_id == current_user.id)
@@ -100,66 +100,90 @@ async def send_chat_message(
         .options(selectinload(DailyBriefing.items))
     )
     latest_briefing = briefing_res.scalars().first()
-    
+
     rag_context = ""
     if latest_briefing and latest_briefing.items:
         news_texts = []
-        count = 0
         for item in latest_briefing.items:
-            if item.category != 'focus':
+            if item.category != "focus":
                 news_texts.append(f"[{item.category.upper()}] {item.title}: {item.summary}")
-                count += 1
-                if count >= 5:
+                if len(news_texts) >= 5:
                     break
-        
         if news_texts:
-            rag_context = "Aşağıdaki haber özetleri kullanıcının ilgi alanlarına göre bu hafta/bugün derlenmiş güncel haberlerdir. Kullanıcı güncel haberleri sorarsa bu bilgileri baz alarak cevap ver:\n" + "\n".join(news_texts)
+            rag_context = (
+                "Aşağıdaki haberler kullanıcının ilgi alanlarına göre derlenmiş güncel Türkçe haberlerdir. "
+                "Kullanıcı güncel haber sorarsa bu bilgileri baz al:\n" + "\n".join(news_texts)
+            )
 
-    from taro_api.services.web_search import perform_web_search
-    web_results = await perform_web_search(payload.message, max_results=3)
+    # ── 5. Smart web search (only when question needs current data) ─────
+    WEB_SEARCH_KEYWORDS = [
+        "fiyat", "kaç", "bugün", "şu an", "şu anki", "son dakika", "haber", "neler oldu",
+        "ne oldu", "ekonomi", "borsa", "döviz", "euro", "dolar", "altın", "faiz", "enflasyon",
+        "hava durumu", "hava", "maç", "sonuç", "skor", "seçim", "gündem", "deprem",
+    ]
+    msg_lower = payload.message.lower()
+    needs_web_search = any(kw in msg_lower for kw in WEB_SEARCH_KEYWORDS)
+
     web_context = ""
-    if web_results:
-        web_texts = [f"- {res['summary']}" for res in web_results]
-        web_context = "Ayrıca internetten şu güncel sonuçları buldum. Kullanıcının sorusuna cevap verirken bu bilgileri de değerlendir:\n" + "\n".join(web_texts)
+    if needs_web_search:
+        from taro_api.services.web_search import perform_web_search
+        try:
+            web_results = await perform_web_search(payload.message, max_results=3)
+            if web_results:
+                web_texts = [f"- {r['summary']}" for r in web_results]
+                web_context = (
+                    "Aşağıdaki bilgiler internetten alınmış güncel arama sonuçlarıdır. "
+                    "Kullanıcının sorusunu cevaplarken bu verileri de kullan:\n" + "\n".join(web_texts)
+                )
+        except Exception:
+            pass  # Web search failure must not crash the chat
 
-    full_context = rag_context
+    # ── 6. Build system prompt ─────────────────────────────────────────
+    system_prompt = (
+        "Sen Taro'nun Türkçe konuşan AI asistanısın. "
+        "MUTLAKA ve SADECE Türkçe cevap ver. Asla başka bir dil kullanma. "
+        "Kısa, öz ve doğrudan cevap ver. Gereksiz tekrar etme. "
+        "Eğer bir bilgiye sahip değilsen bunu dürüstçe söyle."
+    )
+    if rag_context:
+        system_prompt += "\n\n" + rag_context
     if web_context:
-        full_context += "\n\n" + web_context
+        system_prompt += "\n\n" + web_context
 
-    messages_payload = []
-    if full_context.strip():
-        messages_payload.append({"role": "system", "content": full_context.strip()})
-
+    messages_payload = [{"role": "system", "content": system_prompt}]
     messages_payload.extend([{"role": msg.role, "content": msg.content} for msg in history])
 
-    # Invoke AI Gateway completions
+    # ── 7. Call AI Gateway ─────────────────────────────────────────────
     ai = AIClient()
+    assistant_content = ""
+    ai_model = "qwen2.5:3b"
+    tokens = 0
     try:
         completion = await ai.chat_completion(
             messages=messages_payload,
             model=payload.model,
         )
-        # Parse output
         choices = completion.get("choices", [])
         if not choices:
-            raise ValueError("AI Gateway'den herhangi bir yanıt seçeneği dönmedi")
-        assistant_content = choices[0].get("message", {}).get("content", "Yanıt oluşturulurken hata oluştu")
+            raise ValueError("AI Gateway'den yanıt seçeneği dönmedi")
+        assistant_content = choices[0].get("message", {}).get("content", "").strip()
         ai_model = completion.get("model", "qwen2.5:3b")
         tokens = completion.get("usage", {}).get("total_tokens", 0)
     except Exception as exc:
-        import httpx
+        import httpx as _httpx
         error_detail = str(exc)
-        # HTTP Status Error durumunda gövdedeki detail bilgisini çek
-        if isinstance(exc, httpx.HTTPStatusError):
+        if isinstance(exc, _httpx.HTTPStatusError):
             try:
                 error_detail = exc.response.json().get("detail", error_detail)
             except Exception:
                 pass
-        assistant_content = f"Üzgünüm, bir hata nedeniyle bu isteği işleyemedim: {error_detail}"
+        assistant_content = f"Üzgünüm, bir hata nedeniyle yanıt oluşturulamadı: {error_detail}"
         ai_model = "hata"
         tokens = 0
+    finally:
+        await ai.close()
 
-    # Save assistant message
+    # ── 8. Persist assistant reply + commit ────────────────────────────
     asst_msg = Message(
         conversation_id=conversation.id,
         role="assistant",
@@ -168,8 +192,6 @@ async def send_chat_message(
         tokens_used=tokens,
     )
     db.add(asst_msg)
-    
-    # Update conversation timestamp
     conversation.updated_at = datetime.datetime.utcnow()
     await db.commit()
 

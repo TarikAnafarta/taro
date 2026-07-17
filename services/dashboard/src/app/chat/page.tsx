@@ -99,7 +99,9 @@ export default function ChatPage() {
         res.message,
       ]);
     } catch (err: any) {
-      setError(err.detail || 'Mesaj gönderilemedi');
+      // Remove the temp user message that failed to get a response
+      setMessages((prev) => prev.filter((m) => m.id !== tempUserMsg.id));
+      setError(err.detail || 'Mesaj gönderilemedi. Lütfen tekrar deneyin.');
     } finally {
       setSending(false);
     }
