@@ -29,7 +29,7 @@ class ProfileResponse(BaseModel):
 
 class InterestResponse(BaseModel):
     """Interest model response."""
-    id: str
+    id: Optional[str] = None
     category: str
     topic: str
     is_custom: bool
@@ -38,7 +38,7 @@ class InterestResponse(BaseModel):
 
 class NewsPrefResponse(BaseModel):
     """News preference model response."""
-    id: str
+    id: Optional[str] = None
     topic: str
     frequency: str
     is_active: bool
@@ -46,7 +46,7 @@ class NewsPrefResponse(BaseModel):
 
 class LearningGoalResponse(BaseModel):
     """Learning goal model response."""
-    id: str
+    id: Optional[str] = None
     topic: str
     status: str
     notes: Optional[str] = None
@@ -54,7 +54,7 @@ class LearningGoalResponse(BaseModel):
 
 class CareerGoalResponse(BaseModel):
     """Career goal model response."""
-    id: str
+    id: Optional[str] = None
     goal: str
     status: str
     target_date: Optional[str] = None

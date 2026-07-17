@@ -26,7 +26,7 @@
 }
 
 .menuButton {
-  display: none;
+  display: flex;
   background: transparent;
   border: none;
   color: var(--color-text, #f9fafb);
@@ -41,12 +41,6 @@
 
 .menuButton:hover {
   background: rgba(255, 255, 255, 0.05);
-}
-
-@media (max-width: 768px) {
-  .menuButton {
-    display: flex;
-  }
 }
 
 .meta {

@@ -11,7 +11,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from taro_api.db.database import get_db
-from taro_api.db.models import User, Conversation, Message
+from taro_api.db.models import User, Conversation, Message, DailyBriefing
 from taro_api.auth.security import get_current_user
 from taro_api.services.ai_client import AIClient
 
@@ -92,8 +92,6 @@ async def send_chat_message(
     )
     history = hist_res.scalars().all()
     # RAG: Fetch the latest briefing items to use as context
-    from taro_api.db.models import DailyBriefing, BriefingItem
-    from sqlalchemy.orm import selectinload
     briefing_res = await db.execute(
         select(DailyBriefing)
         .where(DailyBriefing.user_id == current_user.id)

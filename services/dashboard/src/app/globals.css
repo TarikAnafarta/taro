@@ -861,3 +861,13 @@ p {
 .card-interactive:hover {
   transform: translateY(-2px);
 }
+
+.mobile-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-overlay {
+    display: block;
+  }
+}
