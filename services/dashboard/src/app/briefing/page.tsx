@@ -224,6 +224,7 @@ export default function DailyBriefingPage() {
                     </p>
                   </div>
 
+                  <div style={{ display: 'flex', flexDirection: 'column', marginTop: 'auto' }}>
                     {/* Like / Dislike Butonları */}
                     <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem' }}>
                       <button
@@ -267,9 +268,9 @@ export default function DailyBriefingPage() {
                         👎 İlgimi Çekmedi
                       </button>
                       {feedbackSent[item.id] && (
-                        <span style={{ fontSize: '0.75rem', color: '#10b981', alignSelf: 'center', marginLeft: 'auto' }}>
-                          Kaydedildi!
-                        </span>
+                         <span style={{ fontSize: '0.75rem', color: '#10b981', alignSelf: 'center', marginLeft: 'auto' }}>
+                           Kaydedildi!
+                         </span>
                       )}
                     </div>
 
