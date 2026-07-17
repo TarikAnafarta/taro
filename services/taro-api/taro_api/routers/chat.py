@@ -111,9 +111,20 @@ async def send_chat_message(
         if news_texts:
             rag_context = "Aşağıdaki haber özetleri kullanıcının ilgi alanlarına göre bu hafta/bugün derlenmiş güncel haberlerdir. Kullanıcı güncel haberleri sorarsa bu bilgileri baz alarak cevap ver:\n" + "\n".join(news_texts)
 
+    from taro_api.services.web_search import perform_web_search
+    web_results = await perform_web_search(payload.message, max_results=3)
+    web_context = ""
+    if web_results:
+        web_texts = [f"- {res['summary']}" for res in web_results]
+        web_context = "Ayrıca internetten şu güncel sonuçları buldum. Kullanıcının sorusuna cevap verirken bu bilgileri de değerlendir:\n" + "\n".join(web_texts)
+
+    full_context = rag_context
+    if web_context:
+        full_context += "\n\n" + web_context
+
     messages_payload = []
-    if rag_context:
-        messages_payload.append({"role": "system", "content": rag_context})
+    if full_context.strip():
+        messages_payload.append({"role": "system", "content": full_context.strip()})
 
     messages_payload.extend([{"role": msg.role, "content": msg.content} for msg in history])
 

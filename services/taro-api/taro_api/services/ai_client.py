@@ -18,7 +18,7 @@ class AIClient:
     def __init__(self, base_url: str | None = None) -> None:
         """Initialize the client."""
         self.base_url = (base_url or settings.NODE1_AI_GATEWAY_URL).rstrip("/")
-        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=120.0)
+        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=None)
         logger.info("ai_client_initialised", base_url=self.base_url)
 
     async def chat_completion(
